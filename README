@@ -153,8 +153,7 @@ python manage.py startapp autenticacao
 
 #### 5. Criar modelos de dados (MVP Simplificado)
 - [ x ] Criar modelo **Pizzaria** (dados básicos da pizzaria)
-- [ ] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
-- [ ] Criar migracoes usando os modelos "python manage.py makemigrations autenticacao"
+- [ x ] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
 - [ ] Definir apenas 2 papéis: 'super_admin' e 'dono_pizzaria'
 - [ ] Configurar relacionamentos básicos
 - [ ] ~~Criar modelo Cliente~~ (não precisa na Fase 1)
