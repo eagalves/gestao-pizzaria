@@ -155,7 +155,7 @@ python manage.py startapp autenticacao
 - [x] Criar modelo **Pizzaria** (dados básicos da pizzaria)
 - [x] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
 - [x] Definir apenas 2 papéis: 'super_admin' e 'dono_pizzaria'
-- [ ] Configurar relacionamentos básicos
+- [x] Configurar relacionamentos básicos
 - [ ] ~~Criar modelo Cliente~~ (não precisa na Fase 1)
 
 #### 6. Criar views de autenticação e gestão (MVP)

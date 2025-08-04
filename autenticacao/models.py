@@ -29,8 +29,8 @@ class UsuarioPizzaria(models.Model):
         ('dono_pizzaria', 'Dono da Pizzaria'),    # Dono - só vê boas-vindas
     ]
     
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    pizzaria = models.ForeignKey(Pizzaria, on_delete=models.CASCADE, null=True, blank=True)  # Super admin não tem pizzaria específica
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='usuarios_pizzaria')
+    pizzaria = models.ForeignKey(Pizzaria, on_delete=models.CASCADE, null=True, blank=True, related_name='usuarios_pizzaria')  # Super admin não tem pizzaria específica
     papel = models.CharField(max_length=20, choices=PAPEIS)
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -40,6 +40,14 @@ class UsuarioPizzaria(models.Model):
         verbose_name_plural = "Usuários Pizzaria"
         unique_together = ['usuario', 'pizzaria']  # Um usuário pode ter apenas um papel por pizzaria
         ordering = ['usuario__username']
+    
+    def is_super_admin(self):
+        """Verifica se é super admin"""
+        return self.papel == 'super_admin'
+    
+    def is_dono_pizzaria(self):
+        """Verifica se é dono de pizzaria"""
+        return self.papel == 'dono_pizzaria'
     
     def __str__(self):
         if self.pizzaria:
