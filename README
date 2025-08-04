@@ -1,0 +1,249 @@
+# Projeto de Aprendizado: Django + PostgreSQL + AWS + Docker
+
+Este é um projeto para aprender as principais tecnologias do desenvolvimento web moderno, criando uma aplicação simples com autenticação que roda em containers Docker e é deployada na AWS.
+
+## 🎯 Objetivo
+Criar uma página web simples com sistema de autenticação utilizando:
+- **Python** com **Django**
+- **PostgreSQL** como banco de dados
+- **Docker** para containerização
+- **AWS EC2** para hospedagem
+
+## 📋 Pré-requisitos
+
+Antes de começar, você precisa ter instalado:
+- [ ] Python 3.8+
+- [ ] Git
+- [ ] Docker e Docker Compose
+- [ ] Conta na AWS
+- [ ] Editor de código (VS Code, PyCharm, etc.)
+
+## 🚀 Passo a Passo
+
+### Fase 1: Preparação do Ambiente Local
+
+#### 1. Criar ambiente virtual Python
+```bash
+# Criar ambiente virtual
+python -m venv venv
+
+# Ativar no Windows
+venv\Scripts\activate
+
+# Ativar no Linux/Mac
+source venv/bin/activate
+```
+
+#### 2. Instalar Django e dependências
+```bash
+pip install django psycopg2-binary python-decouple
+pip freeze > requirements.txt
+```
+
+### Fase 2: Criação do Projeto Django
+
+#### 3. Criar projeto Django
+```bash
+django-admin startproject meu_projeto .
+cd meu_projeto
+python manage.py startapp autenticacao
+```
+
+#### 4. Configurar settings.py
+- [ ] Adicionar o app 'autenticacao' em INSTALLED_APPS
+- [ ] Configurar conexão com PostgreSQL
+- [ ] Configurar variáveis de ambiente com python-decouple
+- [ ] Configurar ALLOWED_HOSTS para produção
+
+#### 5. Criar views de autenticação
+- [ ] Criar página de login
+- [ ] Criar página de registro
+- [ ] Criar página inicial (após login)
+- [ ] Configurar URLs
+
+#### 6. Criar templates HTML
+- [ ] Template base
+- [ ] Template de login
+- [ ] Template de registro
+- [ ] Template da página inicial
+
+### Fase 3: Banco de Dados PostgreSQL
+
+#### 7. Configurar PostgreSQL localmente (para testes)
+- [ ] Instalar PostgreSQL
+- [ ] Criar database para o projeto
+- [ ] Testar conexão
+
+#### 8. Executar migrações
+```bash
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### Fase 4: Containerização com Docker
+
+#### 9. Criar Dockerfile
+- [ ] Criar Dockerfile para a aplicação Django
+- [ ] Definir imagem base Python
+- [ ] Instalar dependências
+- [ ] Configurar entrypoint
+
+#### 10. Criar docker-compose.yml
+- [ ] Serviço para aplicação Django
+- [ ] Serviço para PostgreSQL
+- [ ] Configurar volumes
+- [ ] Configurar redes
+- [ ] Configurar variáveis de ambiente
+
+#### 11. Testar localmente
+```bash
+docker-compose up --build
+```
+
+### Fase 5: Deploy na AWS EC2
+
+#### 12. Preparar instância EC2
+- [ ] Criar instância EC2 (Ubuntu/Amazon Linux)
+- [ ] Configurar Security Groups (portas 22, 80, 443)
+- [ ] Conectar via SSH
+- [ ] Instalar Docker e Docker Compose na instância
+
+#### 13. Transferir código para EC2
+- [ ] Configurar repositório Git
+- [ ] Clonar projeto na instância EC2
+- [ ] Configurar variáveis de ambiente de produção
+
+#### 14. Executar na produção
+```bash
+# Na instância EC2
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Fase 6: Configurações de Produção
+
+#### 15. Configurar domínio (opcional)
+- [ ] Registrar domínio
+- [ ] Configurar DNS apontando para o IP da EC2
+- [ ] Configurar SSL com Let's Encrypt
+
+#### 16. Configurar backup do banco
+- [ ] Script de backup automático
+- [ ] Armazenamento no S3
+
+## 📁 Estrutura Final do Projeto
+```
+meu_projeto/
+├── meu_projeto/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── autenticacao/
+│   ├── templates/
+│   ├── views.py
+│   ├── urls.py
+│   └── models.py
+├── templates/
+├── static/
+├── Dockerfile
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── requirements.txt
+├── .env
+└── README.md
+```
+
+## 🔧 Comandos Úteis
+
+### Django
+```bash
+# Executar servidor local
+python manage.py runserver
+
+# Criar migrações
+python manage.py makemigrations
+
+# Aplicar migrações
+python manage.py migrate
+
+# Criar superusuário
+python manage.py createsuperuser
+```
+
+### Docker
+```bash
+# Construir e executar
+docker-compose up --build
+
+# Executar em background
+docker-compose up -d
+
+# Ver logs
+docker-compose logs
+
+# Parar containers
+docker-compose down
+```
+
+### AWS
+```bash
+# Conectar via SSH
+ssh -i sua-chave.pem ubuntu@ip-da-instancia
+
+# Copiar arquivos via SCP
+scp -i sua-chave.pem arquivo.txt ubuntu@ip-da-instancia:~/
+```
+
+## 📚 Recursos para Aprendizado
+
+### Documentação Oficial
+- [Django Documentation](https://docs.djangoproject.com/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Docker Documentation](https://docs.docker.com/)
+- [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
+
+### Tutoriais Recomendados
+- Django Tutorial Oficial
+- Docker para Iniciantes
+- AWS EC2 Getting Started
+
+## ❓ Checklist de Conclusão
+
+- [ ] Projeto Django criado e funcionando localmente
+- [ ] Sistema de autenticação implementado
+- [ ] PostgreSQL configurado e conectado
+- [ ] Aplicação rodando em Docker localmente
+- [ ] Deploy realizado com sucesso na AWS EC2
+- [ ] Página de login/registro funcionando na produção
+
+## 🆘 Onde Buscar Ajuda
+
+1. **Documentação oficial** das tecnologias
+2. **Stack Overflow** para problemas específicos
+3. **GitHub** para exemplos de código
+4. **YouTube** para tutoriais visuais
+5. **Reddit** (r/django, r/aws) para discussões
+
+---
+
+## 📝 Anotações e Dúvidas
+
+Use este espaço para anotar suas dúvidas e descobertas durante o desenvolvimento:
+
+### Dúvidas Frequentes
+- Como configurar variáveis de ambiente?
+- Qual a diferença entre settings de desenvolvimento e produção?
+- Como debuggar problemas no Docker?
+- Como configurar HTTPS na AWS?
+
+### Próximos Passos (Após completar o projeto básico)
+- [ ] Implementar testes automatizados
+- [ ] Adicionar CI/CD com GitHub Actions
+- [ ] Configurar monitoramento e logs
+- [ ] Implementar cache com Redis
+- [ ] Adicionar CDN para arquivos estáticos
+
+---
+
+*Lembre-se: o objetivo é APRENDER! Não tenha pressa, entenda cada passo antes de prosseguir.*
