@@ -146,15 +146,15 @@ python manage.py startapp autenticacao
 ```
 
 #### 4. Configurar settings.py
-- [ x ] Adicionar o app 'autenticacao' em INSTALLED_APPS
-- [ x ] Configurar conexão com PostgreSQL
-- [ x ] Configurar variáveis de ambiente com python-decouple
-- [ ] Configurar ALLOWED_HOSTS para produção
+- [x] Adicionar o app 'autenticacao' em INSTALLED_APPS
+- [x] Configurar conexão com PostgreSQL
+- [x] Configurar variáveis de ambiente com python-decouple
+- [] Configurar ALLOWED_HOSTS para produção
 
 #### 5. Criar modelos de dados (MVP Simplificado)
-- [ x ] Criar modelo **Pizzaria** (dados básicos da pizzaria)
-- [ x ] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
-- [ ] Definir apenas 2 papéis: 'super_admin' e 'dono_pizzaria'
+- [x] Criar modelo **Pizzaria** (dados básicos da pizzaria)
+- [x] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
+- [x] Definir apenas 2 papéis: 'super_admin' e 'dono_pizzaria'
 - [ ] Configurar relacionamentos básicos
 - [ ] ~~Criar modelo Cliente~~ (não precisa na Fase 1)
 
