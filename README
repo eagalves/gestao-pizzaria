@@ -146,9 +146,9 @@ python manage.py startapp autenticacao
 ```
 
 #### 4. Configurar settings.py
-- [ ] Adicionar o app 'autenticacao' em INSTALLED_APPS
-- [ ] Configurar conexão com PostgreSQL
-- [ ] Configurar variáveis de ambiente com python-decouple
+- [ x ] Adicionar o app 'autenticacao' em INSTALLED_APPS
+- [ x ] Configurar conexão com PostgreSQL
+- [ x ] Configurar variáveis de ambiente com python-decouple
 - [ ] Configurar ALLOWED_HOSTS para produção
 
 #### 5. Criar modelos de dados (MVP Simplificado)
@@ -167,13 +167,6 @@ python manage.py startapp autenticacao
 - [ ] Configurar URLs
 - [ ] Implementar decorador @super_admin_required
 
-#### 7. Criar templates HTML (MVP)
-- [ ] Template base
-- [ ] Template de login
-- [ ] Template do dashboard **Super Admin** (cadastrar/listar pizzarias)
-- [ ] Template de **cadastro de pizzaria**
-- [ ] Template de **lista de pizzarias**
-- [ ] Template de **boas-vindas da pizzaria** (interface simples)
 
 ### Fase 3: Banco de Dados PostgreSQL
 
@@ -573,3 +566,6 @@ Cliente.objects.create(
 ---
 
 *Lembre-se: o objetivo é APRENDER! Não tenha pressa, entenda cada passo antes de prosseguir.*
+
+## 📝 Teste de Modificação
+Esta linha foi adicionada para testar se o git detecta modificações no arquivo README.
