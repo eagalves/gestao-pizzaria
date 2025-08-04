@@ -1,40 +1,25 @@
-# Dockerfile para Produção
-FROM node:18-alpine AS frontend-build
+# Use Python oficial
+FROM python:3.13.5
 
-# Build Frontend
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci --only=production
-COPY frontend/ ./
-RUN npm run build
+# Variáveis de ambiente
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Backend
-FROM python:3.11-slim
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set work directory
+# Diretório de trabalho
 WORKDIR /app
 
-# Install Python dependencies
-COPY backend/requirements.txt .
+# Instalar dependências do sistema (se precisar)
+RUN apt-get update && apt-get install -y postgresql-client
+
+# Copiar e instalar dependências Python
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
-COPY backend/ .
+# Copiar código
+COPY . .
 
-# Copy frontend build
-COPY --from=frontend-build /app/frontend/build ./static_frontend/
-
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Expose port
+# Expor porta
 EXPOSE 8000
 
-# Start command
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "gestao_pizzaria.wsgi:application"]
+# Comando default
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
