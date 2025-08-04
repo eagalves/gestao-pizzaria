@@ -9,6 +9,100 @@ Criar uma página web simples com sistema de autenticação utilizando:
 - **Docker** para containerização
 - **AWS EC2** para hospedagem
 
+## 💼 Arquitetura do Sistema (Escalável)
+
+### 🎯 **Visão Geral**
+Sistema multi-tenant projetado para **começar simples** e **escalar** para gestão completa de pizzarias.
+
+### 📈 **Roadmap de Evolução**
+
+#### **🚀 Fase 1 - MVP (Você está aqui)**
+- ✅ Autenticação básica
+- ✅ Cadastro de clientes
+- ✅ Dashboard simples
+
+#### **🏪 Fase 2 - Multi-Pizzaria**
+- ✅ Cadastro de pizzarias
+- ✅ Usuários vinculados a pizzarias
+- ✅ Isolamento de dados por pizzaria
+
+#### **🍕 Fase 3 - Gestão Completa**
+- ✅ Cardápio por pizzaria
+- ✅ Pedidos e entregas
+- ✅ Relatórios financeiros
+- ✅ Gestão de funcionários
+
+### 🏗️ **Arquitetura Multi-Tenant**
+
+```
+Sistema Principal
+├── Pizzaria A
+│   ├── Funcionários (admin, operador)
+│   ├── Clientes
+│   ├── Cardápio
+│   ├── Pedidos
+│   └── Relatórios
+├── Pizzaria B
+│   ├── Funcionários
+│   ├── Clientes
+│   └── ...
+└── Super Admin (gerencia tudo)
+```
+
+### 👥 **Tipos de Usuário (Arquitetura Final)**
+
+#### **🔧 Super Admin (Você/Sistema)**
+- ✅ Criar/gerenciar pizzarias
+- ✅ Ver dados de todas as pizzarias
+- ✅ Configurações globais do sistema
+
+#### **👑 Admin Pizzaria (Dono/Gerente)**
+- ✅ Gerenciar **SUA** pizzaria
+- ✅ Cadastrar funcionários da pizzaria
+- ✅ Cadastrar clientes da pizzaria
+- ✅ Ver relatórios da pizzaria
+- ❌ **NÃO** vê dados de outras pizzarias
+
+#### **👨‍💼 Funcionário Pizzaria**
+- ✅ Cadastrar clientes da pizzaria
+- ✅ Fazer pedidos
+- ✅ Ver cardápio da pizzaria
+- ❌ **NÃO** acessa relatórios/configurações
+
+#### **👤 Cliente**
+- ✅ Fazer pedidos
+- ✅ Ver histórico próprio
+- ❌ **NÃO** acessa gestão
+
+### 🎯 **Funcionalidades MVP (Fase 1) - Super Simples**
+
+**Apenas 2 tipos de usuário:**
+
+#### **🔧 Super Admin (Você):**
+- ✅ Login/Logout
+- ✅ **Cadastrar pizzarias**
+- ✅ **Listar pizzarias cadastradas**
+- ✅ Dashboard administrativo
+- ✅ Gerenciar sistema completo
+
+#### **🍕 Usuário Pizzaria (Dono da Pizzaria):**
+- ✅ Login/Logout
+- ✅ **Interface de boas-vindas simples**
+- ✅ Ver dados da sua pizzaria
+- ❌ (Funcionalidades avançadas virão nas próximas fases)
+
+> **📝 Fluxo**: Você cadastra uma pizzaria → Cria login para o dono → Dono acessa e vê boas-vindas
+
+### 🔄 **Preparação para Escalabilidade**
+
+**Modelos preparados para crescer:**
+- `User` → Usuário base (Django)
+- `Pizzaria` → Tenant principal 
+- `UsuarioPizzaria` → Relaciona usuário + pizzaria + papel
+- `Cliente` → Pertence a uma pizzaria específica
+
+> **💡 Estratégia**: Começamos com 1 pizzaria padrão, depois permitimos criar múltiplas!
+
 ## 📋 Pré-requisitos
 
 Antes de começar, você precisa ter instalado:
@@ -44,8 +138,10 @@ pip freeze > requirements.txt
 
 #### 3. Criar projeto Django
 ```bash
+# Criar projeto na pasta atual (note o ponto!)
 django-admin startproject meu_projeto .
-cd meu_projeto
+
+# Criar app (manage.py está na pasta atual, NÃO entrar em meu_projeto/)
 python manage.py startapp autenticacao
 ```
 
@@ -55,26 +151,38 @@ python manage.py startapp autenticacao
 - [ ] Configurar variáveis de ambiente com python-decouple
 - [ ] Configurar ALLOWED_HOSTS para produção
 
-#### 5. Criar views de autenticação
-- [ ] Criar página de login
-- [ ] Criar página de registro
-- [ ] Criar página inicial (após login)
-- [ ] Configurar URLs
+#### 5. Criar modelos de dados (MVP Simplificado)
+- [ ] Criar modelo **Pizzaria** (dados básicos da pizzaria)
+- [ ] Criar modelo **UsuarioPizzaria** (relaciona usuário com pizzaria)
+- [ ] Definir apenas 2 papéis: 'super_admin' e 'dono_pizzaria'
+- [ ] Configurar relacionamentos básicos
+- [ ] ~~Criar modelo Cliente~~ (não precisa na Fase 1)
 
-#### 6. Criar templates HTML
+#### 6. Criar views de autenticação e gestão (MVP)
+- [ ] Criar página de login
+- [ ] Criar dashboard do Super Admin (você)
+- [ ] Criar página de **cadastro de pizzaria** (só super admin)
+- [ ] Criar página de **lista de pizzarias** (só super admin)
+- [ ] Criar **interface de boas-vindas** (dono da pizzaria)
+- [ ] Configurar URLs
+- [ ] Implementar decorador @super_admin_required
+
+#### 7. Criar templates HTML (MVP)
 - [ ] Template base
 - [ ] Template de login
-- [ ] Template de registro
-- [ ] Template da página inicial
+- [ ] Template do dashboard **Super Admin** (cadastrar/listar pizzarias)
+- [ ] Template de **cadastro de pizzaria**
+- [ ] Template de **lista de pizzarias**
+- [ ] Template de **boas-vindas da pizzaria** (interface simples)
 
 ### Fase 3: Banco de Dados PostgreSQL
 
-#### 7. Configurar PostgreSQL localmente (para testes)
+#### 8. Configurar PostgreSQL localmente (para testes)
 - [ ] Instalar PostgreSQL
 - [ ] Criar database para o projeto
 - [ ] Testar conexão
 
-#### 8. Executar migrações
+#### 9. Executar migrações
 ```bash
 python manage.py makemigrations
 python manage.py migrate
@@ -83,38 +191,38 @@ python manage.py createsuperuser
 
 ### Fase 4: Containerização com Docker
 
-#### 9. Criar Dockerfile
+#### 10. Criar Dockerfile
 - [ ] Criar Dockerfile para a aplicação Django
 - [ ] Definir imagem base Python
 - [ ] Instalar dependências
 - [ ] Configurar entrypoint
 
-#### 10. Criar docker-compose.yml
+#### 11. Criar docker-compose.yml
 - [ ] Serviço para aplicação Django
 - [ ] Serviço para PostgreSQL
 - [ ] Configurar volumes
 - [ ] Configurar redes
 - [ ] Configurar variáveis de ambiente
 
-#### 11. Testar localmente
+#### 12. Testar localmente
 ```bash
 docker-compose up --build
 ```
 
 ### Fase 5: Deploy na AWS EC2
 
-#### 12. Preparar instância EC2
+#### 13. Preparar instância EC2
 - [ ] Criar instância EC2 (Ubuntu/Amazon Linux)
 - [ ] Configurar Security Groups (portas 22, 80, 443)
 - [ ] Conectar via SSH
 - [ ] Instalar Docker e Docker Compose na instância
 
-#### 13. Transferir código para EC2
+#### 14. Transferir código para EC2
 - [ ] Configurar repositório Git
 - [ ] Clonar projeto na instância EC2
 - [ ] Configurar variáveis de ambiente de produção
 
-#### 14. Executar na produção
+#### 15. Executar na produção
 ```bash
 # Na instância EC2
 docker-compose -f docker-compose.prod.yml up -d
@@ -122,12 +230,12 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ### Fase 6: Configurações de Produção
 
-#### 15. Configurar domínio (opcional)
+#### 16. Configurar domínio (opcional)
 - [ ] Registrar domínio
 - [ ] Configurar DNS apontando para o IP da EC2
 - [ ] Configurar SSL com Let's Encrypt
 
-#### 16. Configurar backup do banco
+#### 17. Configurar backup do banco
 - [ ] Script de backup automático
 - [ ] Armazenamento no S3
 
@@ -141,10 +249,17 @@ meu_projeto/
 │   └── wsgi.py
 ├── autenticacao/
 │   ├── templates/
+│   │   ├── login.html
+│   │   ├── dashboard_super_admin.html    # Você - cadastrar/listar pizzarias
+│   │   ├── cadastro_pizzaria.html        # Formulário cadastro pizzaria
+│   │   ├── lista_pizzarias.html          # Lista todas as pizzarias
+│   │   └── boas_vindas_pizzaria.html     # Interface do dono da pizzaria
 │   ├── views.py
 │   ├── urls.py
-│   └── models.py
+│   ├── models.py       # Pizzaria, UsuarioPizzaria (só 2 papéis)
+│   └── decorators.py   # @super_admin_required
 ├── templates/
+│   └── base.html
 ├── static/
 ├── Dockerfile
 ├── docker-compose.yml
@@ -208,14 +323,33 @@ scp -i sua-chave.pem arquivo.txt ubuntu@ip-da-instancia:~/
 - Docker para Iniciantes
 - AWS EC2 Getting Started
 
-## ❓ Checklist de Conclusão
+## ❓ Checklist de Conclusão (MVP Simplificado)
 
+### Desenvolvimento Local
 - [ ] Projeto Django criado e funcionando localmente
+- [ ] Modelos **Pizzaria** e **UsuarioPizzaria** criados
 - [ ] Sistema de autenticação implementado
+- [ ] 2 tipos de usuário funcionando: super_admin e dono_pizzaria
 - [ ] PostgreSQL configurado e conectado
+- [ ] Dashboard **Super Admin** funcionando
+- [ ] **Cadastro de pizzarias** (só super admin) funcionando
+- [ ] **Lista de pizzarias** (só super admin) funcionando
+- [ ] **Interface de boas-vindas** (dono pizzaria) funcionando
+
+### Docker e Deploy
 - [ ] Aplicação rodando em Docker localmente
 - [ ] Deploy realizado com sucesso na AWS EC2
-- [ ] Página de login/registro funcionando na produção
+- [ ] Sistema completo funcionando na produção
+
+### Testes de Funcionalidade (MVP)
+- [ ] Super Admin consegue fazer login
+- [ ] Super Admin consegue **cadastrar pizzarias**
+- [ ] Super Admin consegue **ver lista de pizzarias**
+- [ ] Dono da pizzaria consegue fazer login
+- [ ] Dono da pizzaria vê **interface de boas-vindas da SUA pizzaria**
+- [ ] Sistema de logout funciona para ambos perfis
+- [ ] **Isolamento**: Dono só vê dados da própria pizzaria
+- [ ] **Permissões**: Dono não acessa funcionalidades de super admin
 
 ## 🆘 Onde Buscar Ajuda
 
@@ -237,12 +371,204 @@ Use este espaço para anotar suas dúvidas e descobertas durante o desenvolvimen
 - Como debuggar problemas no Docker?
 - Como configurar HTTPS na AWS?
 
+## 🏗️ Arquitetura dos Modelos (Detalhada)
+
+### 🎯 **Estratégia de Escalabilidade**
+
+**MVP (Fase 1)**: 1 pizzaria padrão + autenticação básica  
+**Futuro (Fase 2+)**: N pizzarias independentes
+
+### 📊 **Modelos Principais**
+
+#### **1. Pizzaria (Tenant)**
+```python
+class Pizzaria(models.Model):
+    nome = models.CharField(max_length=100)
+    cnpj = models.CharField(max_length=14, unique=True)
+    endereco = models.TextField()
+    telefone = models.CharField(max_length=15)
+    ativa = models.BooleanField(default=True)
+    criada_em = models.DateTimeField(auto_now_add=True)
+    
+    # Futuro: configurações específicas da pizzaria
+    # cor_tema, logo, configurações_delivery, etc.
+```
+
+#### **2. UsuarioPizzaria (MVP - Só 2 Papéis)**
+```python
+class UsuarioPizzaria(models.Model):
+    PAPEIS = [
+        ('super_admin', 'Super Admin'),           # Você (cadastra pizzarias)
+        ('dono_pizzaria', 'Dono da Pizzaria'),    # Dono - só vê boas-vindas
+    ]
+    
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    pizzaria = models.ForeignKey(Pizzaria, on_delete=models.CASCADE, null=True, blank=True)  # Super admin não tem pizzaria específica
+    papel = models.CharField(max_length=20, choices=PAPEIS)
+    ativo = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+```
+
+#### **3. Cliente (Futuras Fases)**
+```python
+# ⏭️ NÃO IMPLEMENTAR AGORA - só nas próximas fases
+# class Cliente(models.Model):
+#     pizzaria = models.ForeignKey(Pizzaria, on_delete=models.CASCADE)
+#     nome = models.CharField(max_length=100)
+#     # ... outros campos virão depois
+```
+
+### 🔐 **Sistema de Permissões (MVP)**
+
+#### **Views do Super Admin:**
+```python
+# views.py - Só você pode cadastrar pizzarias
+@super_admin_required
+def cadastrar_pizzaria(request):
+    # Só super_admin acessa
+    if request.method == 'POST':
+        # Criar pizzaria + usuário dono
+        pass
+    return render(request, 'cadastro_pizzaria.html')
+
+@super_admin_required  
+def listar_pizzarias(request):
+    pizzarias = Pizzaria.objects.all()  # Super admin vê todas
+    return render(request, 'lista_pizzarias.html', {'pizzarias': pizzarias})
+```
+
+#### **Views do Dono da Pizzaria:**
+```python
+# views.py - Dono só vê boas-vindas da SUA pizzaria
+@dono_pizzaria_required
+def boas_vindas(request):
+    user_pizzaria = request.user.usuariopizzaria_set.first()
+    pizzaria = user_pizzaria.pizzaria  # Sua pizzaria específica
+    return render(request, 'boas_vindas_pizzaria.html', {'pizzaria': pizzaria})
+```
+
+#### **Decoradores de Permissão:**
+```python
+# decorators.py
+def super_admin_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.usuariopizzaria_set.filter(papel='super_admin').exists():
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def dono_pizzaria_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if not request.user.usuariopizzaria_set.filter(papel='dono_pizzaria').exists():
+            return redirect('login')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+```
+
+### 🚀 **Evolução do Sistema**
+
+#### **Hoje (MVP Super Simples):**
+```python
+# Você é o super admin (criado uma vez)
+UsuarioPizzaria.objects.create(
+    usuario=voce,  # seu usuário
+    pizzaria=None,  # Super admin não tem pizzaria específica
+    papel='super_admin'
+)
+
+# Quando você cadastra uma pizzaria:
+nova_pizzaria = Pizzaria.objects.create(
+    nome="Pizza do João",
+    cnpj="12345678000199",
+    endereco="Rua A, 123",
+    telefone="11999999999"
+)
+
+# E cria o usuário dono da pizzaria:
+UsuarioPizzaria.objects.create(
+    usuario=novo_dono,
+    pizzaria=nova_pizzaria,
+    papel='dono_pizzaria'
+)
+```
+
+#### **Futuro (Funcionalidades Avançadas):**
+```python
+# Pizzaria pode ter funcionários
+UsuarioPizzaria.objects.create(
+    usuario=funcionario,
+    pizzaria=pizzaria_joao,
+    papel='funcionario'
+)
+
+# Pizzaria pode ter clientes
+Cliente.objects.create(
+    pizzaria=pizzaria_joao,
+    nome="Cliente A",
+    telefone="11888888888"
+)
+
+# E muito mais: cardápio, pedidos, relatórios...
+```
+
+### 💡 **Vantagens desta Arquitetura**
+
+✅ **Escalabilidade**: Fácil adicionar novas pizzarias  
+✅ **Isolamento**: Dados de uma pizzaria não vaza para outra  
+✅ **Flexibilidade**: Diferentes papéis por pizzaria  
+✅ **MVP Simples**: Começa com 1 pizzaria, cresce naturalmente  
+✅ **Futuro-proof**: Preparado para features avançadas  
+
 ### Próximos Passos (Após completar o projeto básico)
 - [ ] Implementar testes automatizados
 - [ ] Adicionar CI/CD com GitHub Actions
 - [ ] Configurar monitoramento e logs
 - [ ] Implementar cache com Redis
 - [ ] Adicionar CDN para arquivos estáticos
+- [ ] **Evoluir para multi-pizzaria** 🍕
+
+---
+
+## 🎯 **Resumo do MVP (Para não esquecer)**
+
+### **O que você vai construir:**
+
+**2 funcionalidades principais:**
+
+#### **1. Você (Super Admin):**
+- ✅ Faz login no sistema
+- ✅ Acessa dashboard administrativo
+- ✅ **Cadastra pizzarias** com dados básicos (nome, CNPJ, endereço, telefone)
+- ✅ **Lista todas as pizzarias** cadastradas
+- ✅ Cria usuários "dono da pizzaria" para cada pizzaria
+
+#### **2. Dono da Pizzaria:**
+- ✅ Recebe login/senha que você criou
+- ✅ Faz login no sistema
+- ✅ Vê **interface de boas-vindas simples** 
+- ✅ Visualiza **dados da SUA pizzaria**
+- ❌ **NÃO** vê outras pizzarias
+- ❌ **NÃO** pode cadastrar novas pizzarias
+
+### **Fluxo completo:**
+```
+1. Você cria o projeto e vira super admin
+2. Você cadastra "Pizzaria do João" 
+3. Sistema cria usuário "joao" (dono da pizzaria)
+4. João faz login e vê: "Bem-vindo à Pizzaria do João!"
+5. Você cadastra "Pizzaria da Maria"
+6. Sistema cria usuário "maria" (dona da pizzaria)  
+7. Maria faz login e vê: "Bem-vindo à Pizzaria da Maria!"
+8. João NÃO vê dados da Maria, e vice-versa
+```
+
+### **Tecnologias:**
+- **Django** (web framework)
+- **PostgreSQL** (banco de dados)
+- **Docker** (containers)
+- **AWS EC2** (hospedagem)
+
+**Simples, escalável e funcional!** 🚀
 
 ---
 
