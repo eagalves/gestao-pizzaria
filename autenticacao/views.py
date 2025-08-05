@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import UsuarioPizzaria
+from .models import UsuarioPizzaria, Pizzaria
 
 def login_view(request):
     """Página de login do sistema"""
@@ -58,3 +58,29 @@ def dashboard(request):
     # Fallback para casos inesperados
     messages.error(request, 'Papel de usuário não reconhecido.')
     return redirect('login')
+
+
+@login_required
+def dashboard_super_admin(request):
+    """Dashboard para Super Admin"""
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
+        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+        return redirect('dashboard')
+
+    # Dados para o dashboard
+    pizzarias = Pizzaria.objects.all()
+    total_pizzarias = pizzarias.count()
+    total_usuarios = UsuarioPizzaria.objects.count()
+    total_super_admins = UsuarioPizzaria.objects.filter(papel='super_admin').count()
+    total_donos = UsuarioPizzaria.objects.filter(papel='dono_pizzaria').count()
+
+    context = {
+        'pizzarias': pizzarias,
+        'total_pizzarias': total_pizzarias,
+        'total_usuarios': total_usuarios,
+        'total_super_admins': total_super_admins,
+        'total_donos': total_donos,
+    }
+    return render(request, 'autenticacao/dashboard_super_admin.html', context)

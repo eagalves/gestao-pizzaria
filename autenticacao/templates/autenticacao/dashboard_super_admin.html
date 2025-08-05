@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard Super Admin</title>
+    <!-- Bootstrap 5 via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYQmhCbJf1Z8JrjD1ZCpkFhCbEaHo/dE12Rw3f8V1jR5iU" crossorigin="anonymous">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos customizados do dashboard -->
+    <link rel="stylesheet" href="{% static 'autenticacao/css/dashboard_super_admin.css' %}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-pizza-slice me-2"></i>
+                Gestão de Pizzarias
+            </a>
+            <div class="d-flex">
+                <span class="me-3 align-self-center text-muted">
+                    <i class="fas fa-user-shield me-1"></i>
+                    {{ user.first_name|default:user.username }}
+                </span>
+                <a class="btn btn-outline-light" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Sair
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-container fade-in-up">
+            <h1 class="main-title">
+                <i class="fas fa-tachometer-alt me-3"></i>
+                Dashboard Super Admin
+            </h1>
+
+            <!-- Métricas -->
+            <div class="row text-center mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card metrics-card h-100">
+                        <div class="card-body position-relative">
+                            <i class="fas fa-store metric-icon"></i>
+                            <h5 class="card-title">Pizzarias</h5>
+                            <p class="metric-number metric-primary">{{ total_pizzarias }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metrics-card h-100">
+                        <div class="card-body position-relative">
+                            <i class="fas fa-users metric-icon"></i>
+                            <h5 class="card-title">Usuários</h5>
+                            <p class="metric-number metric-success">{{ total_usuarios }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metrics-card h-100">
+                        <div class="card-body position-relative">
+                            <i class="fas fa-user-shield metric-icon"></i>
+                            <h5 class="card-title">Super Admins</h5>
+                            <p class="metric-number metric-warning">{{ total_super_admins }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card metrics-card h-100">
+                        <div class="card-body position-relative">
+                            <i class="fas fa-user-tie metric-icon"></i>
+                            <h5 class="card-title">Donos de Pizzaria</h5>
+                            <p class="metric-number metric-info">{{ total_donos }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pizzarias-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-list me-2"></i>
+                        Pizzarias Cadastradas
+                    </h2>
+                    <a href="#" class="btn btn-add-pizzaria disabled" title="Em desenvolvimento">
+                        <i class="fas fa-plus me-2"></i>
+                        Nova Pizzaria
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> #</th>
+                                <th><i class="fas fa-store me-1"></i> Nome</th>
+                                <th><i class="fas fa-id-card me-1"></i> CNPJ</th>
+                                <th><i class="fas fa-phone me-1"></i> Telefone</th>
+                                <th><i class="fas fa-map-marker-alt me-1"></i> Endereço</th>
+                                <th><i class="fas fa-toggle-on me-1"></i> Status</th>
+                                <th><i class="fas fa-cogs me-1"></i> Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pizzaria in pizzarias %}
+                                <tr>
+                                    <td><strong>{{ forloop.counter }}</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                <i class="fas fa-pizza-slice text-white" style="font-size: 0.8rem;"></i>
+                                            </div>
+                                            <strong>{{ pizzaria.nome }}</strong>
+                                        </div>
+                                    </td>
+                                    <td><code>{{ pizzaria.cnpj }}</code></td>
+                                    <td>
+                                        <a href="tel:{{ pizzaria.telefone }}" class="text-decoration-none">
+                                            {{ pizzaria.telefone }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ pizzaria.endereco|truncatechars:40 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if pizzaria.ativa %}
+                                            <span class="badge badge-modern badge-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Ativa
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-modern badge-danger">
+                                                <i class="fas fa-times-circle me-1"></i>
+                                                Inativa
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" title="Visualizar">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Desativar">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="fas fa-store fa-3x mb-3 opacity-25"></i>
+                                            <h5>Nenhuma pizzaria cadastrada</h5>
+                                            <p>Clique em "Nova Pizzaria" para começar</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-qN2c6+gJIKBo2Plew69RJPkVcmS6gZ+OnLsPYBeVJRT2bXNuZNm5tQ9iVOFl1WtF" crossorigin="anonymous"></script>
+</body>
+</html>
