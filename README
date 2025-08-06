@@ -162,7 +162,7 @@ python manage.py startapp autenticacao
 - [x] Criar página de login
 - [x] Criar no super usuario um jeito de cadastrar usuario do sistema
 - [x] Criar dashboard do Super Admin (você)
-- [ ] Criar página de **cadastro de pizzaria** (só super admin)
+- [x] Criar página de **cadastro de pizzaria** (só super admin)
 - [ ] Criar página de **lista de pizzarias** (só super admin)
 - [ ] Criar **interface de boas-vindas** (dono da pizzaria)
 - [ ] Configurar URLs

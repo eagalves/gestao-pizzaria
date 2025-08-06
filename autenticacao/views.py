@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import UsuarioPizzaria, Pizzaria
+from .forms import PizzariaForm
 
 def login_view(request):
     """Página de login do sistema"""
@@ -58,6 +59,30 @@ def dashboard(request):
     # Fallback para casos inesperados
     messages.error(request, 'Papel de usuário não reconhecido.')
     return redirect('login')
+
+
+@login_required
+def cadastro_pizzaria(request):
+    """Cadastro de nova pizzaria (apenas Super Admin)"""
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
+        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = PizzariaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Pizzaria cadastrada com sucesso!')
+            return redirect('dashboard_super_admin')
+    else:
+        form = PizzariaForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'autenticacao/cadastro_pizzaria.html', context)
 
 
 @login_required
