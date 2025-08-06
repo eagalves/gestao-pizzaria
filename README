@@ -165,8 +165,8 @@ python manage.py startapp autenticacao
 - [x] Criar página de **cadastro de pizzaria** (só super admin)
 - [x] Criar página de **lista de pizzarias** (só super admin)
 - [x] Criar **interface de boas-vindas** (dono da pizzaria)
-- [ ] Configurar URLs
-- [ ] Implementar decorador @super_admin_required
+- [x] Configurar URLs
+- [x] Implementar decorador @super_admin_required
 
 #### 7. Criar templates HTML (MVP)
 - [ ] Template base
