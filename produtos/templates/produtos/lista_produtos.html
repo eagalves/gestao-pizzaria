@@ -37,7 +37,7 @@
                 <tr>
                     <td class="fw-semibold">{{ produto.nome }}</td>
                     <td>{{ produto.categoria }}</td>
-                    <td>R$ {{ produto.preco_base|floatformat:2 }}</td>
+                    <td>R$ {{ produto.preco_atual|floatformat:2 }}</td>
                     <td><span class="badge bg-success-light text-success">Disponível</span></td>
                     <td class="text-end">
                         <a href="#" class="text-orange me-3"><i class="fas fa-edit"></i></a>
@@ -62,68 +62,115 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form method="post" action="{% url 'lista_produtos' %}">{% csrf_token %}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Categoria</label>
-                            <select class="form-select">
-                                <option selected>Selecione a categoria</option>
-                            </select>
+                            {{ form.categoria }}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nome do Produto</label>
-                            <input type="text" class="form-control">
+                            {{ form.nome }}
                         </div>
                         <div class="col-12">
                             <label class="form-label">Descrição</label>
-                            <textarea class="form-control" rows="3"></textarea>
+                            {{ form.descricao }}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Preço Base (R$)</label>
-                            <input type="number" step="0.01" value="0" class="form-control">
+                            {{ form.preco_base }}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Tempo de Preparo (minutos)</label>
-                            <input type="number" value="15" class="form-control">
+                            {{ form.tempo_preparo_minutos }}
                         </div>
                         <div class="col-12 d-flex flex-wrap gap-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prodDisponivel" checked>
-                                <label class="form-check-label" for="prodDisponivel">Disponível</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prodVeg" >
-                                <label class="form-check-label" for="prodVeg">Vegetariano</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prodVegan" >
-                                <label class="form-check-label" for="prodVegan">Vegano</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prodGluten" >
-                                <label class="form-check-label" for="prodGluten">Contém Glúten</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prodLactose" >
-                                <label class="form-check-label" for="prodLactose">Contém Lactose</label>
-                            </div>
+                            {% for field in form %}
+                                {% if field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check me-4">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+                                {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
 
                     <h6>Ingredientes</h6>
                     <div class="border rounded p-3 mb-3">
-                        <p class="text-muted mb-2" id="ingredientesVazio">Nenhum ingrediente adicionado. Clique em "Adicionar" para incluir ingredientes.</p>
-                        <ul class="list-group list-group-flush" id="listaIngredientes"></ul>
+                        <div id="ingredientes-container">
+                            <p class="text-muted mb-2" id="ingredientes-vazio">Nenhum ingrediente adicionado. Clique em "Adicionar" para incluir ingredientes.</p>
+                            <div id="ingredientes-lista"></div>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-add-ingrediente">
+                            <i class="fas fa-plus me-2"></i>Adicionar
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-outline-secondary" id="btnAddIngrediente"><i class="fas fa-plus me-2"></i>Adicionar</button>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-orange">Salvar Produto</button>
+                    </div>
                 </form>
-                
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-orange">Salvar Produto</button>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+let ingredienteCount = 0;
+
+document.getElementById('btn-add-ingrediente').addEventListener('click', function() {
+    ingredienteCount++;
+    
+    const ingredientesLista = document.getElementById('ingredientes-lista');
+    const ingredientesVazio = document.getElementById('ingredientes-vazio');
+    
+    // Esconde a mensagem de "nenhum ingrediente"
+    ingredientesVazio.style.display = 'none';
+    
+    const ingredienteDiv = document.createElement('div');
+    ingredienteDiv.className = 'row g-2 mb-2 align-items-end';
+    ingredienteDiv.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Ingrediente ${ingredienteCount}</label>
+            <select class="form-select" name="ingrediente_${ingredienteCount}">
+                <option value="">Selecione um ingrediente</option>
+                {% for ingrediente in ingredientes_disponiveis %}
+                    <option value="{{ ingrediente.id }}">{{ ingrediente.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Quantidade</label>
+            <input type="number" step="0.01" class="form-control" name="quantidade_${ingredienteCount}" value="1">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Unidade</label>
+            <select class="form-select" name="unidade_${ingredienteCount}">
+                <option value="g">Gramas (g)</option>
+                <option value="kg">Quilos (kg)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="l">Litros (l)</option>
+                <option value="un">Unidade</option>
+                <option value="fatia">Fatia</option>
+                <option value="pitada">Pitada</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.parentElement.remove(); verificarIngredientes();">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    ingredientesLista.appendChild(ingredienteDiv);
+});
+
+function verificarIngredientes() {
+    const ingredientesLista = document.getElementById('ingredientes-lista');
+    const ingredientesVazio = document.getElementById('ingredientes-vazio');
+    
+    if (ingredientesLista.children.length === 0) {
+        ingredientesVazio.style.display = 'block';
+    }
+}
+</script>
 {% endblock %}
