@@ -55,40 +55,69 @@
 
 <!-- Modal Novo Produto -->
 <div class="modal fade" id="modalNovoProduto" tabindex="-1" aria-labelledby="modalNovoProdutoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalNovoProdutoLabel">Novo Produto</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Formulário simples; sem backend ainda -->
                 <form>
-                    <div class="row g-3">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-select">
+                                <option selected>Selecione a categoria</option>
+                            </select>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Nome do Produto</label>
                             <input type="text" class="form-control">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Categoria</label>
-                            <input type="text" class="form-control">
-                        </div>
                         <div class="col-12">
-                            <label class="form-label">Descrição (opcional)</label>
+                            <label class="form-label">Descrição</label>
                             <textarea class="form-control" rows="3"></textarea>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Preço Base (R$)</label>
-                            <input type="number" step="0.01" class="form-control" value="0">
+                            <input type="number" step="0.01" value="0" class="form-control">
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Tempo de Preparo (minutos)</label>
+                            <input type="number" value="15" class="form-control">
+                        </div>
+                        <div class="col-12 d-flex flex-wrap gap-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="disponivelCheck" checked>
-                                <label class="form-check-label" for="disponivelCheck">Disponível</label>
+                                <input class="form-check-input" type="checkbox" id="prodDisponivel" checked>
+                                <label class="form-check-label" for="prodDisponivel">Disponível</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prodVeg" >
+                                <label class="form-check-label" for="prodVeg">Vegetariano</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prodVegan" >
+                                <label class="form-check-label" for="prodVegan">Vegano</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prodGluten" >
+                                <label class="form-check-label" for="prodGluten">Contém Glúten</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prodLactose" >
+                                <label class="form-check-label" for="prodLactose">Contém Lactose</label>
                             </div>
                         </div>
                     </div>
+
+                    <h6>Ingredientes</h6>
+                    <div class="border rounded p-3 mb-3">
+                        <p class="text-muted mb-2" id="ingredientesVazio">Nenhum ingrediente adicionado. Clique em "Adicionar" para incluir ingredientes.</p>
+                        <ul class="list-group list-group-flush" id="listaIngredientes"></ul>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary" id="btnAddIngrediente"><i class="fas fa-plus me-2"></i>Adicionar</button>
                 </form>
+                
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

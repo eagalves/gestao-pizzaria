@@ -173,6 +173,7 @@ python manage.py startapp autenticacao
 - [x] Criar tela de formulario para adicionar Novo Ingrediente
 - [x] Criar banco de dados para os Ingredientes
 - [x] Criar Tela de Produtos
+- [x] Adicionar novo produtos
 
 #### 9. Executar migrações
 ```bash
