@@ -86,6 +86,22 @@ def cadastro_pizzaria(request):
 
 
 @login_required
+def lista_pizzarias(request):
+    """Lista completa de pizzarias (apenas Super Admin)"""
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
+        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+        return redirect('dashboard')
+
+    pizzarias = Pizzaria.objects.all()
+    context = {
+        'pizzarias': pizzarias,
+    }
+    return render(request, 'autenticacao/lista_pizzarias.html', context)
+
+
+@login_required
 def dashboard_super_admin(request):
     """Dashboard para Super Admin"""
     usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()

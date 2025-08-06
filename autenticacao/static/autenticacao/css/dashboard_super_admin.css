@@ -94,7 +94,7 @@ body {
     background: var(--gradient-primary);
 }
 
-.metrics-card:hover {
+.metrics-card-link:hover .metrics-card {
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
@@ -113,6 +113,18 @@ body {
     font-weight: 800;
     line-height: 1;
     margin-bottom: 0;
+}
+
+.metrics-card-link {
+    text-decoration: none;
+    display: block;
+}
+
+.metrics-card-link {
+    text-decoration: none;
+    display: block;
+    position: relative;
+    z-index: 1;
 }
 
 .metric-primary { color: var(--primary); }

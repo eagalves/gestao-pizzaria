@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lista de Pizzarias</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'autenticacao/css/dashboard_super_admin.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard_super_admin' %}"><i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard</a>
+            <div class="d-flex">
+                <a class="btn btn-outline-light me-2" href="{% url 'cadastro_pizzaria' %}"><i class="fas fa-plus me-1"></i>Nova Pizzaria</a>
+                <a class="btn btn-outline-light" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-1"></i>Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-container fade-in-up">
+            <h1 class="main-title"><i class="fas fa-store me-3"></i>Lista de Pizzarias</h1>
+
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nome</th>
+                            <th>CNPJ</th>
+                            <th>Telefone</th>
+                            <th>Endereço</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pizzaria in pizzarias %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ pizzaria.nome }}</td>
+                                <td><code>{{ pizzaria.cnpj }}</code></td>
+                                <td>{{ pizzaria.telefone }}</td>
+                                <td>{{ pizzaria.endereco|truncatechars:60 }}</td>
+                                <td>
+                                    {% if pizzaria.ativa %}
+                                        <span class="badge badge-modern badge-success">Ativa</span>
+                                    {% else %}
+                                        <span class="badge badge-modern badge-danger">Inativa</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Desativar">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fas fa-store fa-3x mb-3 opacity-25"></i>
+                                    <h5>Nenhuma pizzaria cadastrada</h5>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
