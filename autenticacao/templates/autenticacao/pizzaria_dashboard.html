@@ -62,7 +62,7 @@
         <nav class="nav flex-column mt-2">
             <a class="nav-link {% if request.resolver_match.view_name == 'pizzaria_dashboard' %}active{% endif %}" href="#"><i class="fas fa-home"></i>Dashboard</a>
             <a class="nav-link" href="#"><i class="fas fa-store"></i>Pizzarias</a>
-            <a class="nav-link" href="#"><i class="fas fa-pizza-slice"></i>Produtos</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'lista_produtos' %}active{% endif %}" href="{% url 'lista_produtos' %}"><i class="fas fa-pizza-slice"></i>Produtos</a>
             <a class="nav-link {% if request.resolver_match.view_name == 'lista_ingredientes' %}active{% endif %}" href="{% url 'lista_ingredientes' %}"><i class="fas fa-seedling"></i>Ingredientes</a>
             <a class="nav-link" href="#"><i class="fas fa-shopping-cart"></i>Pedidos</a>
             <a class="nav-link" href="#"><i class="fas fa-users"></i>Clientes</a>
