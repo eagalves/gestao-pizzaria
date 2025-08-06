@@ -9,4 +9,6 @@ urlpatterns = [
     path('dashboard/super-admin/', views.dashboard_super_admin, name='dashboard_super_admin'),
     path('pizzarias/nova/', views.cadastro_pizzaria, name='cadastro_pizzaria'),
     path('pizzarias/', views.lista_pizzarias, name='lista_pizzarias'),
+    path('boas-vindas/', views.boas_vindas_pizzaria, name='boas_vindas_pizzaria'),
+    path('pizzarias/<int:pizzaria_id>/boas-vindas/', views.visualizar_pizzaria, name='visualizar_pizzaria'),
 ]

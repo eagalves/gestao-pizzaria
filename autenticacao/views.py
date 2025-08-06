@@ -42,6 +42,53 @@ def logout_view(request):
     messages.success(request, 'Logout realizado com sucesso!')
     return redirect('login')
 
+
+@login_required
+def boas_vindas_pizzaria(request):
+    """Página de boas-vindas para o dono da pizzaria"""
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria or not usuario_pizzaria.is_dono_pizzaria():
+        messages.error(request, 'Acesso permitido apenas para donos de pizzaria.')
+        return redirect('login')
+
+    pizzaria = usuario_pizzaria.pizzaria
+    context = {
+        'pizzaria': pizzaria,
+    }
+    return render(request, 'autenticacao/boas_vindas_pizzaria.html', context)
+
+
+@login_required
+def visualizar_pizzaria(request, pizzaria_id):
+    """Exibe a tela de boas-vindas de uma pizzaria específica.
+
+    • Super Admin pode visualizar qualquer pizzaria
+    • Dono de pizzaria só pode visualizar sua própria pizzaria
+    """
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria:
+        messages.error(request, 'Usuário sem permissões no sistema.')
+        return redirect('login')
+
+    # Se for dono de pizzaria, garantir que esteja acessando a própria pizzaria
+    if usuario_pizzaria.is_dono_pizzaria() and usuario_pizzaria.pizzaria.id != pizzaria_id:
+        messages.error(request, 'Acesso negado para esta pizzaria.')
+        return redirect('dashboard')
+
+    try:
+        pizzaria = Pizzaria.objects.get(id=pizzaria_id)
+    except Pizzaria.DoesNotExist:
+        messages.error(request, 'Pizzaria não encontrada.')
+        return redirect('dashboard')
+
+    context = {
+        'pizzaria': pizzaria,
+    }
+    return render(request, 'autenticacao/boas_vindas_pizzaria.html', context)
+
+
 @login_required
 def dashboard(request):
     """Dashboard padrão - redireciona conforme o papel"""

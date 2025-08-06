@@ -164,7 +164,7 @@ python manage.py startapp autenticacao
 - [x] Criar dashboard do Super Admin (você)
 - [x] Criar página de **cadastro de pizzaria** (só super admin)
 - [x] Criar página de **lista de pizzarias** (só super admin)
-- [ ] Criar **interface de boas-vindas** (dono da pizzaria)
+- [x] Criar **interface de boas-vindas** (dono da pizzaria)
 - [ ] Configurar URLs
 - [ ] Implementar decorador @super_admin_required
 

@@ -40,7 +40,7 @@
                     </thead>
                     <tbody>
                         {% for pizzaria in pizzarias %}
-                            <tr>
+                            <tr data-href="{% url 'visualizar_pizzaria' pizzaria.id %}" onclick="window.location.href=this.dataset.href" style="cursor: pointer;">
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ pizzaria.nome }}</td>
                                 <td><code>{{ pizzaria.cnpj }}</code></td>
