@@ -168,20 +168,6 @@ python manage.py startapp autenticacao
 - [x] Configurar URLs
 - [x] Implementar decorador @super_admin_required
 
-#### 7. Criar templates HTML (MVP)
-- [ ] Template base
-- [ ] Template de login
-- [ ] Template do dashboard **Super Admin** (cadastrar/listar pizzarias)
-- [ ] Template de **cadastro de pizzaria**
-- [ ] Template de **lista de pizzarias**
-- [ ] Template de **boas-vindas da pizzaria** (interface simples)
-
-### Fase 3: Banco de Dados PostgreSQL
-
-#### 8. Configurar PostgreSQL localmente (para testes)
-- [ ] Instalar PostgreSQL
-- [ ] Criar database para o projeto
-- [ ] Testar conexão
 
 #### 9. Executar migrações
 ```bash
