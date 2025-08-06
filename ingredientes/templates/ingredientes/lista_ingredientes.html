@@ -8,7 +8,10 @@
         <h2 class="mb-1">Ingredientes</h2>
         <p class="text-muted mb-0">Gerencie os ingredientes disponíveis para seus produtos</p>
     </div>
-    <a href="#" class="btn btn-orange"><i class="fas fa-plus me-2"></i>Novo Ingrediente</a>
+    <!-- Botão para abrir o modal -->
+    <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#modalNovoIngrediente">
+        <i class="fas fa-plus me-2"></i>Novo Ingrediente
+    </button>
 </div>
 
 <div class="mb-3">
@@ -46,5 +49,56 @@
         {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Modal Novo Ingrediente -->
+<div class="modal fade" id="modalNovoIngrediente" tabindex="-1" aria-labelledby="modalNovoIngredienteLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNovoIngredienteLabel">Novo Ingrediente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="nomeIngrediente" class="form-label">Nome do Ingrediente</label>
+                        <input type="text" class="form-control" id="nomeIngrediente">
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricaoIngrediente" class="form-label">Descrição (opcional)</label>
+                        <textarea class="form-control" id="descricaoIngrediente" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="precoAdicional" class="form-label">Preço Adicional (R$)</label>
+                        <input type="number" class="form-control" id="precoAdicional" value="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <h6>Características</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="checkVegetariano">
+                            <label class="form-check-label" for="checkVegetariano">Vegetariano</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="checkVegano">
+                            <label class="form-check-label" for="checkVegano">Vegano</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="checkGluten">
+                            <label class="form-check-label" for="checkGluten">Contém Glúten</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="checkLactose">
+                            <label class="form-check-label" for="checkLactose">Contém Lactose</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-orange">Salvar Ingrediente</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
