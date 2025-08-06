@@ -56,7 +56,7 @@ def boas_vindas_pizzaria(request):
     context = {
         'pizzaria': pizzaria,
     }
-    return render(request, 'autenticacao/boas_vindas_pizzaria.html', context)
+    return render(request, 'autenticacao/pizzaria_dashboard.html', context)
 
 
 @login_required
@@ -86,7 +86,7 @@ def visualizar_pizzaria(request, pizzaria_id):
     context = {
         'pizzaria': pizzaria,
     }
-    return render(request, 'autenticacao/boas_vindas_pizzaria.html', context)
+    return render(request, 'autenticacao/pizzaria_dashboard.html', context)
 
 
 @login_required

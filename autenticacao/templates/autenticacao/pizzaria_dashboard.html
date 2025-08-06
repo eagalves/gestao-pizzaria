@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestão {{ pizzaria.nome }}</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background-color: #ffffff;
+            border-right: 1px solid #e6e6e6;
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: 12px 20px;
+            font-weight: 500;
+        }
+        .sidebar .nav-link.active,
+        .sidebar .nav-link:hover {
+            background-color: #fff5ec;
+            color: #d35400;
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+        }
+        .logout-link {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+        }
+        .content-area {
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar position-relative">
+        <h5 class="text-center py-3 mb-0 border-bottom">
+            <i class="fas fa-pizza-slice text-danger me-2"></i>
+            Gestão Pizzaria
+        </h5>
+        <nav class="nav flex-column mt-2">
+            <a class="nav-link" href="#"><i class="fas fa-home"></i>Dashboard</a>
+            <a class="nav-link active" href="#"><i class="fas fa-store"></i>Pizzarias</a>
+            <a class="nav-link" href="#"><i class="fas fa-pizza-slice"></i>Produtos</a>
+            <a class="nav-link" href="#"><i class="fas fa-seedling"></i>Ingredientes</a>
+            <a class="nav-link" href="#"><i class="fas fa-shopping-cart"></i>Pedidos</a>
+            <a class="nav-link" href="#"><i class="fas fa-users"></i>Clientes</a>
+            <a class="nav-link" href="#"><i class="fas fa-cubes"></i>Estoque</a>
+            <a class="nav-link" href="#"><i class="fas fa-chart-line"></i>Financeiro</a>
+            <a class="nav-link" href="#"><i class="fas fa-cog"></i>Configurações</a>
+        </nav>
+        <div class="logout-link">
+            <a class="nav-link text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i>Sair</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-grow-1 content-area">
+        <h2>Bem-vindo à gestão da {{ pizzaria.nome }}</h2>
+        <p class="text-muted">Funcionalidades em construção. Em breve você poderá gerenciar produtos, pedidos e muito mais!</p>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
