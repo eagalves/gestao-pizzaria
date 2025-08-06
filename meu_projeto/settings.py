@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'autenticacao',  # Nosso app para gestão de pizzarias
+    'ingredientes',
 ]
 
 MIDDLEWARE = [

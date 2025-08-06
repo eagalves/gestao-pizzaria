@@ -168,6 +168,8 @@ python manage.py startapp autenticacao
 - [x] Configurar URLs
 - [x] Implementar decorador @super_admin_required
 
+#### 6. Criar ferramentas de gestão para o dono da pizzaria.
+- [x] Criar tela de Ingredientes
 
 #### 9. Executar migrações
 ```bash

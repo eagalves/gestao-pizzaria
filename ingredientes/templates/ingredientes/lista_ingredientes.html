@@ -1,0 +1,50 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Ingredientes - Gestão Pizzaria{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Ingredientes</h2>
+        <p class="text-muted mb-0">Gerencie os ingredientes disponíveis para seus produtos</p>
+    </div>
+    <a href="#" class="btn btn-orange"><i class="fas fa-plus me-2"></i>Novo Ingrediente</a>
+</div>
+
+<div class="mb-3">
+    <input type="text" class="form-control" placeholder="Buscar ingredientes...">
+</div>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead class="table-light">
+        <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Preço Adicional</th>
+            <th>Características</th>
+            <th class="text-end">Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for ingrediente in ingredientes %}
+            <tr>
+                <td class="fw-semibold">{{ ingrediente.nome }}</td>
+                <td>{{ ingrediente.descricao|default:"-" }}</td>
+                <td>R$ {{ ingrediente.preco_adicional|floatformat:2 }}</td>
+                <td>
+                    {% if ingrediente.vegetariano %}<span class="badge bg-success-light text-success">Vegetariano</span>{% endif %}
+                    {% if ingrediente.vegano %}<span class="badge bg-info-light text-info">Vegano</span>{% endif %}
+                </td>
+                <td class="text-end">
+                    <a href="#" class="text-decoration-none text-orange me-3"><i class="fas fa-edit"></i></a>
+                    <a href="#" class="text-decoration-none text-danger"><i class="fas fa-trash-alt"></i></a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="text-center py-5 text-muted">Nenhum ingrediente cadastrado</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
