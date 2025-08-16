@@ -1,0 +1,29 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Editar Ingrediente - Gestão Pizzaria{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Editar Ingrediente</h2>
+
+<form method="post" action="">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label" for="{{ form.nome.id_for_label }}">Nome</label>
+        {{ form.nome }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="{{ form.descricao.id_for_label }}">Descrição</label>
+        {{ form.descricao }}
+    </div>
+    <div class="mb-3">
+        <h6>Características</h6>
+        <div class="form-check">{{ form.vegetariano }} <label class="form-check-label" for="{{ form.vegetariano.id_for_label }}">Vegetariano</label></div>
+        <div class="form-check">{{ form.vegano }} <label class="form-check-label" for="{{ form.vegano.id_for_label }}">Vegano</label></div>
+        <div class="form-check">{{ form.contem_gluten }} <label class="form-check-label" for="{{ form.contem_gluten.id_for_label }}">Contém Glúten</label></div>
+        <div class="form-check">{{ form.contem_lactose }} <label class="form-check-label" for="{{ form.contem_lactose.id_for_label }}">Contém Lactose</label></div>
+    </div>
+
+    <a href="{% url 'lista_ingredientes' %}" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-orange">Salvar Alterações</button>
+</form>
+{% endblock %}

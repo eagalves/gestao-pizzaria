@@ -44,8 +44,16 @@
                     {% if ingrediente.contem_lactose %}<span class="badge bg-primary-light text-primary">Lactose</span>{% endif %}
                 </td>
                 <td class="text-end">
-                    <a href="#" class="text-decoration-none text-orange me-3"><i class="fas fa-edit"></i></a>
-                    <a href="#" class="text-decoration-none text-danger"><i class="fas fa-trash-alt"></i></a>
+                    <a href="#" class="text-decoration-none text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarIngrediente"
+                       data-id="{{ ingrediente.id }}"
+                       data-nome="{{ ingrediente.nome|escapejs }}"
+                       data-descricao="{{ ingrediente.descricao|default:''|escapejs }}"
+                       data-vegetariano="{{ ingrediente.vegetariano|yesno:'1,0' }}"
+                       data-vegano="{{ ingrediente.vegano|yesno:'1,0' }}"
+                       data-gluten="{{ ingrediente.contem_gluten|yesno:'1,0' }}"
+                       data-lactose="{{ ingrediente.contem_lactose|yesno:'1,0' }}">
+                        <i class="fas fa-edit"></i></a>
+                    <a href="{% url 'excluir_ingrediente' ingrediente.id %}" class="text-decoration-none text-danger" onclick="return confirm('Tem certeza que deseja excluir este ingrediente?');"><i class="fas fa-trash-alt"></i></a>
                 </td>
             </tr>
         {% empty %}
@@ -90,4 +98,66 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Editar Ingrediente (único, preenchido via JS) -->
+<div class="modal fade" id="modalEditarIngrediente" tabindex="-1" aria-labelledby="modalEditarIngredienteLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditarIngrediente">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarIngredienteLabel">Editar Ingrediente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label" for="edit-nome">Nome do Ingrediente</label>
+              <input type="text" class="form-control" id="edit-nome" name="nome" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="edit-descricao">Descrição (opcional)</label>
+              <textarea class="form-control" id="edit-descricao" name="descricao" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <h6>Características</h6>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="edit-vegetariano" name="vegetariano"><label class="form-check-label" for="edit-vegetariano">Vegetariano</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="edit-vegano" name="vegano"><label class="form-check-label" for="edit-vegano">Vegano</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="edit-gluten" name="contem_gluten"><label class="form-check-label" for="edit-gluten">Contém Glúten</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="edit-lactose" name="contem_lactose"><label class="form-check-label" for="edit-lactose">Contém Lactose</label></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-orange">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const modalEditar = document.getElementById('modalEditarIngrediente');
+modalEditar.addEventListener('show.bs.modal', function (event) {
+  const button = event.relatedTarget;
+  const id = button.getAttribute('data-id');
+  const nome = button.getAttribute('data-nome');
+  const descricao = button.getAttribute('data-descricao');
+  const vegetariano = button.getAttribute('data-vegetariano') === '1';
+  const vegano = button.getAttribute('data-vegano') === '1';
+  const gluten = button.getAttribute('data-gluten') === '1';
+  const lactose = button.getAttribute('data-lactose') === '1';
+
+  // preencher campos
+  document.getElementById('edit-nome').value = nome;
+  document.getElementById('edit-descricao').value = descricao;
+  document.getElementById('edit-vegetariano').checked = vegetariano;
+  document.getElementById('edit-vegano').checked = vegano;
+  document.getElementById('edit-gluten').checked = gluten;
+  document.getElementById('edit-lactose').checked = lactose;
+
+  // definir action do form
+  const form = document.getElementById('formEditarIngrediente');
+  form.action = `/ingredientes/${id}/editar/`;
+});
+</script>
 {% endblock %}

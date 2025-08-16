@@ -40,8 +40,20 @@
                     <td>R$ {{ produto.preco_atual|floatformat:2 }}</td>
                     <td><span class="badge bg-success-light text-success">Disponível</span></td>
                     <td class="text-end">
-                        <a href="#" class="text-orange me-3"><i class="fas fa-edit"></i></a>
-                        <a href="#" class="text-danger"><i class="fas fa-trash-alt"></i></a>
+                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarProduto"
+                           data-id="{{ produto.id }}"
+                           data-nome="{{ produto.nome|escapejs }}"
+                           data-descricao="{{ produto.descricao|default:''|escapejs }}"
+                           data-categoria="{{ produto.categoria.id|default:'' }}"
+                           data-preco="{{ produto.preco_atual }}"
+                           data-tempo="{{ produto.tempo_preparo_minutos }}"
+                           data-disponivel="{{ produto.disponivel|yesno:'1,0' }}"
+                           data-vegetariano="{{ produto.vegetariano|yesno:'1,0' }}"
+                           data-vegano="{{ produto.vegano|yesno:'1,0' }}"
+                           data-gluten="{{ produto.contem_gluten|yesno:'1,0' }}"
+                           data-lactose="{{ produto.contem_lactose|yesno:'1,0' }}">
+                         <i class="fas fa-edit"></i></a>
+                        <a href="{% url 'excluir_produto' produto.id %}" class="text-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?');"><i class="fas fa-trash-alt"></i></a>
                     </td>
                 </tr>
             {% empty %}
@@ -114,6 +126,61 @@
     </div>
 </div>
 
+<!-- Modal Editar Produto -->
+<div class="modal fade" id="modalEditarProduto" tabindex="-1" aria-labelledby="modalEditarProdutoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" id="formEditarProduto">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarProdutoLabel">Editar Produto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Categoria</label>
+              <select class="form-select" id="edit-categoria" name="categoria">
+                <option value="">----------</option>
+                {% for cat in form.fields.categoria.queryset %}
+                  <option value="{{ cat.id }}">{{ cat.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nome do Produto</label>
+              <input type="text" class="form-control" id="edit-nome" name="nome" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descrição</label>
+              <textarea class="form-control" id="edit-descricao" name="descricao" rows="3"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Preço Base (R$)</label>
+              <input type="number" step="0.01" class="form-control" id="edit-preco" name="preco_base" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tempo de Preparo (minutos)</label>
+              <input type="number" class="form-control" id="edit-tempo" name="tempo_preparo_minutos" required>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-4">
+              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-disponivel" name="disponivel"><label class="form-check-label" for="edit-disponivel">Disponível</label></div>
+              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-vegetariano" name="vegetariano"><label class="form-check-label" for="edit-vegetariano">Vegetariano</label></div>
+              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-vegano" name="vegano"><label class="form-check-label" for="edit-vegano">Vegano</label></div>
+              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-gluten" name="contem_gluten"><label class="form-check-label" for="edit-gluten">Contém Glúten</label></div>
+              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-lactose" name="contem_lactose"><label class="form-check-label" for="edit-lactose">Contém Lactose</label></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-orange">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 let ingredienteCount = 0;
 
@@ -172,5 +239,34 @@ function verificarIngredientes() {
         ingredientesVazio.style.display = 'block';
     }
 }
+
+const modalEditarProduto = document.getElementById('modalEditarProduto');
+modalEditarProduto.addEventListener('show.bs.modal', function (event) {
+  const button = event.relatedTarget;
+  const id = button.getAttribute('data-id');
+  const nome = button.getAttribute('data-nome');
+  const descricao = button.getAttribute('data-descricao');
+  const categoria = button.getAttribute('data-categoria');
+  const preco = button.getAttribute('data-preco');
+  const tempo = button.getAttribute('data-tempo');
+  const disponivel = button.getAttribute('data-disponivel') === '1';
+  const vegetariano = button.getAttribute('data-vegetariano') === '1';
+  const vegano = button.getAttribute('data-vegano') === '1';
+  const gluten = button.getAttribute('data-gluten') === '1';
+  const lactose = button.getAttribute('data-lactose') === '1';
+
+  document.getElementById('edit-nome').value = nome;
+  document.getElementById('edit-descricao').value = descricao;
+  document.getElementById('edit-categoria').value = categoria;
+  document.getElementById('edit-preco').value = preco;
+  document.getElementById('edit-tempo').value = tempo;
+  document.getElementById('edit-disponivel').checked = disponivel;
+  document.getElementById('edit-vegetariano').checked = vegetariano;
+  document.getElementById('edit-vegano').checked = vegano;
+  document.getElementById('edit-gluten').checked = gluten;
+  document.getElementById('edit-lactose').checked = lactose;
+
+  document.getElementById('formEditarProduto').action = `/produtos/${id}/editar/`;
+});
 </script>
 {% endblock %}

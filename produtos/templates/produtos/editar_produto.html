@@ -1,0 +1,43 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Editar Produto - Gestão Pizzaria{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Editar Produto</h2>
+
+<form method="post" action="">
+    {% csrf_token %}
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Categoria</label>
+            {{ form.categoria }}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Nome do Produto</label>
+            {{ form.nome }}
+        </div>
+        <div class="col-12">
+            <label class="form-label">Descrição</label>
+            {{ form.descricao }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Preço Base (R$)</label>
+            {{ form.preco_base }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Tempo de Preparo (minutos)</label>
+            {{ form.tempo_preparo_minutos }}
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-4">
+            {% for field in form %}
+                {% if field.widget.input_type == 'checkbox' %}
+                    <div class="form-check me-4">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <a href="{% url 'lista_produtos' %}" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-orange">Salvar Alterações</button>
+</form>
+{% endblock %}
