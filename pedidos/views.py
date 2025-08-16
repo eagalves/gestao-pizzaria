@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
 from autenticacao.models import UsuarioPizzaria
 from produtos.models import Produto
 from .models import Pedido, ItemPedido
@@ -62,5 +63,43 @@ def lista_pedidos(request):
     context = {
         "pedidos": pedidos,
         "produtos_disponiveis": produtos,
+        "status_choices": Pedido.STATUS_CHOICES,
     }
     return render(request, "pedidos/lista_pedidos.html", context)
+
+
+@login_required
+def alterar_status_pedido(request, pedido_id):
+    """Altera o status de um pedido via AJAX."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Método não permitido"}, status=405)
+    
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and pedido.pizzaria != usuario_pizzaria.pizzaria:
+        return JsonResponse({"error": "Permissão negada"}, status=403)
+    
+    novo_status = request.POST.get("status")
+    if not novo_status:
+        return JsonResponse({"error": "Status é obrigatório"}, status=400)
+    
+    # Validar se o status é válido
+    status_validos = [choice[0] for choice in Pedido.STATUS_CHOICES]
+    if novo_status not in status_validos:
+        return JsonResponse({"error": "Status inválido"}, status=400)
+    
+    # Atualizar status
+    pedido.status = novo_status
+    pedido.save(update_fields=['status', 'data_atualizacao'])
+    
+    # Obter o nome do status para exibição
+    status_display = dict(Pedido.STATUS_CHOICES)[novo_status]
+    
+    return JsonResponse({
+        "success": True,
+        "status": novo_status,
+        "status_display": status_display,
+        "message": f"Status do pedido #{pedido.id} alterado para {status_display}"
+    })

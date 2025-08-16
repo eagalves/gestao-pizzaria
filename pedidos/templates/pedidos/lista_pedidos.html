@@ -40,7 +40,44 @@
                     <td>{{ pedido.cliente_nome }}</td>
                     <td>{{ pedido.data_criacao }}</td>
                     <td>R$ {{ pedido.total|floatformat:2 }}</td>
-                    <td><span class="badge bg-warning-light text-warning">{{ pedido.status }}</span></td>
+                    <td>
+                        <div class="dropdown dropup">
+                            <button class="btn btn-sm dropdown-toggle status-badge-{{ pedido.status|lower }}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="true">
+                                {{ pedido.get_status_display }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% for status_code, status_name in status_choices %}
+                                    {% if status_code != pedido.status %}
+                                        <li><a class="dropdown-item alterar-status" href="#" data-pedido-id="{{ pedido.id }}" data-status="{{ status_code }}">
+                                            <span class="status-indicator status-{{ status_code|lower }}"></span>
+                                            {{ status_name }}
+                                        </a></li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <!-- Ações rápidas para status mais comuns -->
+                        {% if pedido.status == 'RECEBIDO' %}
+                            <div class="mt-1">
+                                <button class="btn btn-xs btn-outline-warning quick-status" data-pedido-id="{{ pedido.id }}" data-status="EM_PREPARO" title="Iniciar preparo">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        {% elif pedido.status == 'EM_PREPARO' %}
+                            <div class="mt-1">
+                                <button class="btn btn-xs btn-outline-success quick-status" data-pedido-id="{{ pedido.id }}" data-status="PRONTO" title="Marcar como pronto">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        {% elif pedido.status == 'PRONTO' %}
+                            <div class="mt-1">
+                                <button class="btn btn-xs btn-outline-primary quick-status" data-pedido-id="{{ pedido.id }}" data-status="ENTREGUE" title="Marcar como entregue">
+                                    <i class="fas fa-truck"></i>
+                                </button>
+                            </div>
+                        {% endif %}
+                    </td>
                     <td class="text-end">
                         <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalDetalhesPedido"><i class="fas fa-eye"></i></a>
                         <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarPedido"><i class="fas fa-edit"></i></a>
@@ -179,5 +216,180 @@ document.getElementById('btn-add-item').addEventListener('click', () => {
   });
   row.querySelector('.qtd-input').addEventListener('input', atualizarTotais);
 });
+
+// Função para alterar status do pedido
+function alterarStatus(pedidoId, novoStatus, statusNome, elemento) {
+  if (confirm(`Alterar status do pedido #${pedidoId} para "${statusNome}"?`)) {
+    // Mostrar loading no elemento
+    const originalContent = elemento.innerHTML;
+    elemento.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    elemento.disabled = true;
+    
+    // Fazer requisição AJAX
+    fetch(`/pedidos/${pedidoId}/alterar-status/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: `status=${novoStatus}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Recarregar a página para atualizar a interface
+        location.reload();
+      } else {
+        alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        elemento.innerHTML = originalContent;
+        elemento.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      alert('Erro ao alterar status do pedido');
+      elemento.innerHTML = originalContent;
+      elemento.disabled = false;
+    });
+  }
+}
+
+// Event listeners
+document.addEventListener('click', function(e) {
+  // Dropdown de status
+  if (e.target.classList.contains('alterar-status')) {
+    e.preventDefault();
+    
+    const pedidoId = e.target.getAttribute('data-pedido-id');
+    const novoStatus = e.target.getAttribute('data-status');
+    const statusNome = e.target.textContent.trim();
+    
+    alterarStatus(pedidoId, novoStatus, statusNome, e.target);
+  }
+  
+  // Botões de ação rápida
+  if (e.target.closest('.quick-status')) {
+    e.preventDefault();
+    
+    const button = e.target.closest('.quick-status');
+    const pedidoId = button.getAttribute('data-pedido-id');
+    const novoStatus = button.getAttribute('data-status');
+    
+    // Mapear status para nomes amigáveis
+    const statusNames = {
+      'EM_PREPARO': 'Em Preparo',
+      'PRONTO': 'Pronto',
+      'ENTREGUE': 'Entregue'
+    };
+    
+    const statusNome = statusNames[novoStatus] || novoStatus;
+    alterarStatus(pedidoId, novoStatus, statusNome, button);
+  }
+});
 </script>
+
+<style>
+/* Estilos para os badges de status */
+.status-badge-rascunho {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+}
+
+.status-badge-recebido {
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+}
+
+.status-badge-em_preparo {
+  background-color: #fd7e14;
+  color: white;
+  border: none;
+}
+
+.status-badge-pronto {
+  background-color: #20c997;
+  color: white;
+  border: none;
+}
+
+.status-badge-entregue {
+  background-color: #198754;
+  color: white;
+  border: none;
+}
+
+.status-badge-cancelado {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.status-badge-rascunho:hover,
+.status-badge-recebido:hover,
+.status-badge-em_preparo:hover,
+.status-badge-pronto:hover,
+.status-badge-entregue:hover,
+.status-badge-cancelado:hover {
+  opacity: 0.8;
+}
+
+/* Indicadores de status no dropdown */
+.status-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-rascunho { background-color: #6c757d; }
+.status-recebido { background-color: #ffc107; }
+.status-em_preparo { background-color: #fd7e14; }
+.status-pronto { background-color: #20c997; }
+.status-entregue { background-color: #198754; }
+.status-cancelado { background-color: #dc3545; }
+
+/* Botões de ação rápida */
+.btn-xs {
+  padding: 0.125rem 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: 0.2rem;
+}
+
+.quick-status {
+  transition: all 0.2s ease;
+}
+
+.quick-status:hover {
+  transform: scale(1.1);
+}
+
+/* Melhorar dropdown para não precisar scroll */
+.dropdown-menu {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Forçar dropdown para cima quando necessário */
+.table tbody tr:nth-last-child(-n+3) .dropdown {
+  position: static;
+}
+
+.table tbody tr:nth-last-child(-n+3) .dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  top: auto;
+  transform: translateY(-5px);
+}
+
+/* Ajustar largura da coluna de status */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  min-width: 140px;
+  width: 140px;
+}
+</style>
 {% endblock %}
