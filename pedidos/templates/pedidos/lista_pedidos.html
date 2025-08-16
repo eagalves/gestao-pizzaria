@@ -1,0 +1,183 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Pedidos - Gestão Pizzaria{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Pedidos</h2>
+    <button class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#modalNovoPedido">
+        <i class="fas fa-plus me-2"></i>Novo Pedido
+    </button>
+</div>
+
+<div class="d-flex gap-3 mb-3">
+    <div class="flex-grow-1 position-relative">
+        <input type="text" class="form-control ps-5" placeholder="Buscar por cliente ou código...">
+        <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+    </div>
+    <button class="btn btn-outline-secondary d-flex align-items-center gap-2">
+        <i class="fas fa-filter"></i>
+        Filtros
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Data/Hora</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pedido in pedidos %}
+                <tr>
+                    <td>{{ pedido.id }}</td>
+                    <td>{{ pedido.cliente_nome }}</td>
+                    <td>{{ pedido.data_criacao }}</td>
+                    <td>R$ {{ pedido.total|floatformat:2 }}</td>
+                    <td><span class="badge bg-warning-light text-warning">{{ pedido.status }}</span></td>
+                    <td class="text-end">
+                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalDetalhesPedido"><i class="fas fa-eye"></i></a>
+                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarPedido"><i class="fas fa-edit"></i></a>
+                        <a href="#" class="text-danger" onclick="return confirm('Cancelar este pedido?');"><i class="fas fa-times-circle"></i></a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">Nenhum pedido registrado</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Novo Pedido -->
+<div class="modal fade" id="modalNovoPedido" tabindex="-1" aria-labelledby="modalNovoPedidoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="#" id="formNovoPedido">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalNovoPedidoLabel">Novo Pedido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Cliente (opcional)</label>
+              <input type="text" class="form-control" name="cliente_nome" placeholder="Nome do cliente">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Telefone</label>
+              <input type="text" class="form-control" name="cliente_telefone" placeholder="(xx) xxxxx-xxxx">
+            </div>
+          </div>
+
+          <h6>Itens do Pedido</h6>
+          <div class="border rounded p-3 mb-2">
+            <div id="itens-pedido-lista"></div>
+            <button type="button" class="btn btn-outline-secondary" id="btn-add-item">
+              <i class="fas fa-plus me-2"></i>Adicionar Item
+            </button>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <h5>Subtotal: R$ <span id="subtotal">0.00</span></h5>
+          </div>
+
+          <hr>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Forma de Pagamento</label>
+              <select class="form-select" name="forma_pagamento" required>
+                <option value="DIN">Dinheiro</option>
+                <option value="PIX">Pix</option>
+                <option value="CC">Cartão Crédito</option>
+                <option value="CD">Cartão Débito</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Observações do Pedido</label>
+              <input type="text" class="form-control" name="observacoes" placeholder="Ex.: Sem cebola em metade da pizza">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Total: R$ <span id="total-geral">0.00</span></strong>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-orange">Salvar Pedido</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let itemCount = 0;
+const produtos = [
+  {% for p in produtos_disponiveis %}
+    {id: {{ p.id }}, nome: "{{ p.nome|escapejs }}", preco: {{ p.preco_atual }}},
+  {% endfor %}
+];
+
+function atualizarTotais() {
+  const subtotalSpan = document.getElementById('subtotal');
+  const totalSpan = document.getElementById('total-geral');
+  let subtotal = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const preco = parseFloat(row.dataset.preco);
+    const qtd = parseFloat(row.querySelector('.qtd-input').value) || 0;
+    subtotal += preco * qtd;
+  });
+  subtotalSpan.textContent = subtotal.toFixed(2);
+  totalSpan.textContent = subtotal.toFixed(2); // Sem taxa por enquanto
+}
+
+document.getElementById('btn-add-item').addEventListener('click', () => {
+  itemCount++;
+  const lista = document.getElementById('itens-pedido-lista');
+  const row = document.createElement('div');
+  row.className = 'row g-2 align-items-end mb-2 item-row';
+  row.dataset.preco = 0;
+  row.innerHTML = `
+    <div class="col-md-5">
+      <label class="form-label">Produto</label>
+      <select class="form-select prod-select" name="item_produto_${itemCount}" required>
+        <option value="">Selecione</option>
+        ${produtos.map(p => `<option value="${p.id}" data-preco="${p.preco}">${p.nome}</option>`).join('')}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Qtd.</label>
+      <input type="number" min="1" value="1" class="form-control qtd-input" name="item_qtd_${itemCount}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Obs.</label>
+      <input type="text" class="form-control" name="item_obs_${itemCount}">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.item-row').remove(); atualizarTotais();"><i class="fas fa-trash"></i></button>
+    </div>
+  `;
+  lista.appendChild(row);
+
+  // Eventos para atualizar preço
+  row.querySelector('.prod-select').addEventListener('change', function() {
+    const price = parseFloat(this.selectedOptions[0].dataset.preco || 0);
+    row.dataset.preco = price;
+    atualizarTotais();
+  });
+  row.querySelector('.qtd-input').addEventListener('input', atualizarTotais);
+});
+</script>
+{% endblock %}

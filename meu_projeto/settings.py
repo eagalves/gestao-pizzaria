@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'autenticacao',  # Nosso app para gestão de pizzarias
     'ingredientes',
     'produtos',
+    'pedidos',
 ]
 
 MIDDLEWARE = [
