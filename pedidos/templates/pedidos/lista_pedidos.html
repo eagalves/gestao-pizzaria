@@ -236,6 +236,74 @@
     </div>
 </div>
 
+<!-- Modal Editar Pedido -->
+<div class="modal fade" id="modalEditarPedido" tabindex="-1" aria-labelledby="modalEditarPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="formEditarPedido">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarPedidoLabel">Editar Pedido #<span id="edit-pedido-id"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Cliente (opcional)</label>
+                            <input type="text" class="form-control" id="edit-cliente-nome" name="cliente_nome" placeholder="Nome do cliente">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control" id="edit-cliente-telefone" name="cliente_telefone" placeholder="(xx) xxxxx-xxxx">
+                        </div>
+                    </div>
+
+                    <h6>Itens do Pedido</h6>
+                    <div class="border rounded p-3 mb-2">
+                        <div id="edit-itens-pedido-lista"></div>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-edit-add-item">
+                            <i class="fas fa-plus me-2"></i>Adicionar Item
+                        </button>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <h5>Subtotal: R$ <span id="edit-subtotal">0.00</span></h5>
+                    </div>
+
+                    <hr>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Forma de Pagamento</label>
+                            <select class="form-select" id="edit-forma-pagamento" name="forma_pagamento" required>
+                                <option value="DIN">Dinheiro</option>
+                                <option value="PIX">Pix</option>
+                                <option value="CC">Cartão Crédito</option>
+                                <option value="CD">Cartão Débito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Observações Gerais do Pedido</label>
+                            <textarea class="form-control" id="edit-observacoes" name="observacoes" rows="2" placeholder="Ex.: Entrega no portão dos fundos"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Total: R$ <span id="edit-total-geral">0.00</span></strong>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-orange">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 let itemCount = 0;
 const produtos = [
@@ -457,12 +525,179 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Botão Editar (por enquanto só um alerta)
+// Variáveis para edição
+let editItemCount = 0;
+let editProdutos = [];
+
+// Botão Editar
 document.addEventListener('click', function(e) {
   if (e.target.closest('.btn-editar')) {
     e.preventDefault();
-    alert('Funcionalidade de edição em desenvolvimento!');
+    const pedidoId = e.target.closest('.btn-editar').getAttribute('data-pedido-id');
+    
+    // Carregar dados para edição
+    fetch(`/pedidos/${pedidoId}/editar/`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert('Erro: ' + data.error);
+          return;
+        }
+        
+        // Preencher dados básicos
+        document.getElementById('edit-pedido-id').textContent = data.id;
+        document.getElementById('edit-cliente-nome').value = data.cliente_nome;
+        document.getElementById('edit-cliente-telefone').value = data.cliente_telefone;
+        document.getElementById('edit-forma-pagamento').value = data.forma_pagamento;
+        document.getElementById('edit-observacoes').value = data.observacoes;
+        
+        // Guardar produtos disponíveis
+        editProdutos = data.produtos_disponiveis;
+        
+        // Limpar e recriar itens
+        const itensContainer = document.getElementById('edit-itens-pedido-lista');
+        itensContainer.innerHTML = '';
+        editItemCount = 0;
+        
+        // Adicionar itens existentes
+        data.itens.forEach(item => {
+          adicionarItemEdicao(item.produto_id, item.quantidade, item.observacao);
+        });
+        
+        // Se não há itens, adicionar um vazio
+        if (data.itens.length === 0) {
+          adicionarItemEdicao();
+        }
+        
+        // Calcular totais
+        atualizarTotaisEdicao();
+        
+        // Abrir modal
+        new bootstrap.Modal(document.getElementById('modalEditarPedido')).show();
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao carregar dados para edição');
+      });
   }
+});
+
+// Função para adicionar item na edição
+function adicionarItemEdicao(produtoId = '', quantidade = 1, observacao = '') {
+  editItemCount++;
+  
+  const itensContainer = document.getElementById('edit-itens-pedido-lista');
+  const row = document.createElement('div');
+  row.className = 'row g-2 align-items-end mb-2 edit-item-row';
+  row.dataset.preco = 0;
+  
+  const produtosOptions = editProdutos.map(p => 
+    `<option value="${p.id}" data-preco="${p.preco}" ${p.id == produtoId ? 'selected' : ''}>${p.nome}</option>`
+  ).join('');
+  
+  row.innerHTML = `
+    <div class="col-md-5">
+      <label class="form-label">Produto</label>
+      <select class="form-select edit-prod-select" name="item_produto_${editItemCount}" required>
+        <option value="">Selecione</option>
+        ${produtosOptions}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Qtd.</label>
+      <input type="number" min="1" value="${quantidade}" class="form-control edit-qtd-input" name="item_qtd_${editItemCount}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Observações do Item</label>
+      <input type="text" class="form-control" name="item_obs_${editItemCount}" value="${observacao}" placeholder="Ex.: Sem queijo">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.edit-item-row').remove(); atualizarTotaisEdicao();">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `;
+  
+  itensContainer.appendChild(row);
+  
+  // Definir preço se produto já selecionado
+  const select = row.querySelector('.edit-prod-select');
+  if (produtoId) {
+    const selectedOption = select.querySelector(`option[value="${produtoId}"]`);
+    if (selectedOption) {
+      row.dataset.preco = selectedOption.dataset.preco;
+    }
+  }
+  
+  // Eventos
+  select.addEventListener('change', function() {
+    const price = parseFloat(this.selectedOptions[0].dataset.preco || 0);
+    row.dataset.preco = price;
+    atualizarTotaisEdicao();
+  });
+  
+  row.querySelector('.edit-qtd-input').addEventListener('input', atualizarTotaisEdicao);
+}
+
+// Botão adicionar item na edição
+document.getElementById('btn-edit-add-item').addEventListener('click', () => {
+  adicionarItemEdicao();
+});
+
+// Função para atualizar totais na edição
+function atualizarTotaisEdicao() {
+  const subtotalSpan = document.getElementById('edit-subtotal');
+  const totalSpan = document.getElementById('edit-total-geral');
+  let subtotal = 0;
+  
+  document.querySelectorAll('.edit-item-row').forEach(row => {
+    const preco = parseFloat(row.dataset.preco || 0);
+    const qtd = parseFloat(row.querySelector('.edit-qtd-input').value) || 0;
+    subtotal += preco * qtd;
+  });
+  
+  subtotalSpan.textContent = subtotal.toFixed(2);
+  totalSpan.textContent = subtotal.toFixed(2);
+}
+
+// Submit do formulário de edição
+document.getElementById('formEditarPedido').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const pedidoId = document.getElementById('edit-pedido-id').textContent;
+  const formData = new FormData(this);
+  
+  // Mostrar loading
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvando...';
+  submitBtn.disabled = true;
+  
+  fetch(`/pedidos/${pedidoId}/editar/`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarPedido')).hide();
+      location.reload();
+    } else {
+      alert('Erro: ' + data.error);
+    }
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao salvar pedido');
+  })
+  .finally(() => {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  });
 });
 </script>
 

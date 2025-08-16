@@ -166,3 +166,98 @@ def cancelar_pedido(request, pedido_id):
         "success": True,
         "message": f"Pedido #{pedido.id} cancelado com sucesso"
     })
+
+
+@login_required
+def editar_pedido(request, pedido_id):
+    """Edita um pedido existente."""
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and pedido.pizzaria != usuario_pizzaria.pizzaria:
+        return JsonResponse({"error": "Permissão negada"}, status=403)
+    
+    # Verificar se pode editar
+    if pedido.status in ['ENTREGUE', 'CANCELADO']:
+        return JsonResponse({"error": f"Não é possível editar pedido {pedido.get_status_display().lower()}"}, status=400)
+    
+    if request.method == "POST":
+        try:
+            # Atualizar dados básicos do pedido
+            pedido.cliente_nome = request.POST.get("cliente_nome", "")
+            pedido.cliente_telefone = request.POST.get("cliente_telefone", "")
+            pedido.forma_pagamento = request.POST.get("forma_pagamento")
+            pedido.observacoes = request.POST.get("observacoes", "")
+            
+            # Validar forma de pagamento
+            if not pedido.forma_pagamento:
+                return JsonResponse({"error": "Forma de pagamento é obrigatória"}, status=400)
+            
+            pedido.save()
+            
+            # Remover itens existentes
+            pedido.itens.all().delete()
+            
+            # Adicionar novos itens
+            pizzaria = pedido.pizzaria
+            for key, value in request.POST.items():
+                if key.startswith("item_produto_") and value:
+                    idx = key.split("_")[2]
+                    produto_id = value
+                    qtd = int(request.POST.get(f"item_qtd_{idx}", 1))
+                    obs_item = request.POST.get(f"item_obs_{idx}", "")
+
+                    try:
+                        produto = Produto.objects.get(id=produto_id, pizzaria=pizzaria)
+                    except Produto.DoesNotExist:
+                        continue
+
+                    ItemPedido.objects.create(
+                        pedido=pedido,
+                        produto=produto,
+                        quantidade=qtd,
+                        valor_unitario=produto.preco_atual,
+                        observacao_item=obs_item,
+                    )
+            
+            # Atualizar total
+            pedido.atualizar_total()
+            
+            return JsonResponse({
+                "success": True,
+                "message": f"Pedido #{pedido.id} atualizado com sucesso!"
+            })
+            
+        except Exception as e:
+            return JsonResponse({"error": f"Erro ao salvar pedido: {str(e)}"}, status=400)
+    
+    # GET - retornar dados para edição
+    itens = []
+    for item in pedido.itens.select_related('produto').all():
+        itens.append({
+            'produto_id': item.produto.id,
+            'produto_nome': item.produto.nome,
+            'quantidade': item.quantidade,
+            'observacao': item.observacao_item or ''
+        })
+    
+    produtos_disponiveis = []
+    for produto in Produto.objects.filter(pizzaria=pedido.pizzaria, disponivel=True):
+        produtos_disponiveis.append({
+            'id': produto.id,
+            'nome': produto.nome,
+            'preco': float(produto.preco_atual)
+        })
+    
+    dados = {
+        'id': pedido.id,
+        'cliente_nome': pedido.cliente_nome or '',
+        'cliente_telefone': pedido.cliente_telefone or '',
+        'forma_pagamento': pedido.forma_pagamento,
+        'observacoes': pedido.observacoes or '',
+        'itens': itens,
+        'produtos_disponiveis': produtos_disponiveis
+    }
+    
+    return JsonResponse(dados)
