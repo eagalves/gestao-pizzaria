@@ -9,4 +9,10 @@ urlpatterns = [
     path("<int:produto_id>/ingredientes/", views.ingredientes_produto, name="ingredientes_produto"),
     # rota para excluir produto
     path("<int:produto_id>/excluir/", views.excluir_produto, name="excluir_produto"),
+    
+    # ==================== ROTAS DE CATEGORIAS ====================
+    path("categorias/", views.lista_categorias, name="lista_categorias"),
+    path("categorias/<int:categoria_id>/editar/", views.editar_categoria, name="editar_categoria"),
+    path("categorias/<int:categoria_id>/excluir/", views.excluir_categoria, name="excluir_categoria"),
+    path("categorias/reordenar/", views.reordenar_categorias, name="reordenar_categorias"),
 ]

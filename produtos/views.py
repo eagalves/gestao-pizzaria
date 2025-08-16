@@ -6,8 +6,8 @@ from django.http import JsonResponse
 
 from autenticacao.models import UsuarioPizzaria
 from ingredientes.models import Ingrediente
-from .models import Produto, PrecoProduto, ProdutoIngrediente
-from .forms import ProdutoForm
+from .models import Produto, PrecoProduto, ProdutoIngrediente, CategoriaProduto
+from .forms import ProdutoForm, CategoriaForm
 
 
 @login_required
@@ -187,3 +187,114 @@ def excluir_produto(request, produto_id):
     produto.delete()
     messages.success(request, "Produto excluído com sucesso!")
     return redirect("lista_produtos")
+
+
+# ==================== VIEWS DE CATEGORIAS ====================
+
+@login_required
+def lista_categorias(request):
+    """Lista categorias da pizzaria e processa cadastro via modal."""
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pizzaria = usuario_pizzaria.pizzaria
+
+    if request.method == 'POST':
+        form = CategoriaForm(request.POST)
+        if form.is_valid():
+            categoria = form.save(commit=False)
+            categoria.pizzaria = pizzaria
+            categoria.save()
+            messages.success(request, f'Categoria "{categoria.nome}" criada com sucesso!')
+            return redirect('lista_categorias')
+        else:
+            messages.error(request, 'Erro ao criar categoria. Verifique os dados.')
+    else:
+        form = CategoriaForm()
+
+    categorias = CategoriaProduto.objects.filter(pizzaria=pizzaria).order_by('ordem', 'nome')
+    
+    # Estatísticas por categoria
+    for categoria in categorias:
+        categoria.total_produtos = categoria.produtos.count()
+
+    context = {
+        'categorias': categorias,
+        'form': form,
+    }
+    return render(request, 'produtos/lista_categorias.html', context)
+
+
+@login_required
+def editar_categoria(request, categoria_id):
+    """Edita uma categoria existente."""
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    categoria = get_object_or_404(CategoriaProduto, id=categoria_id)
+
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and categoria.pizzaria != usuario_pizzaria.pizzaria:
+        messages.error(request, "Permissão negada.")
+        return redirect("lista_categorias")
+
+    if request.method == "POST":
+        form = CategoriaForm(request.POST, instance=categoria)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Categoria "{categoria.nome}" atualizada com sucesso!')
+            return redirect("lista_categorias")
+        else:
+            messages.error(request, "Erro ao salvar alterações. Verifique os dados.")
+    else:
+        form = CategoriaForm(instance=categoria)
+
+    context = {
+        "form": form,
+        "categoria": categoria,
+    }
+    return render(request, "produtos/editar_categoria.html", context)
+
+
+@login_required
+def excluir_categoria(request, categoria_id):
+    """Exclui uma categoria."""
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    categoria = get_object_or_404(CategoriaProduto, id=categoria_id)
+
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and categoria.pizzaria != usuario_pizzaria.pizzaria:
+        messages.error(request, "Permissão negada.")
+        return redirect("lista_categorias")
+
+    # Verificar se há produtos usando esta categoria
+    produtos_count = categoria.produtos.count()
+    if produtos_count > 0:
+        messages.error(request, f'Não é possível excluir a categoria "{categoria.nome}" pois ela possui {produtos_count} produto(s) associado(s).')
+        return redirect("lista_categorias")
+
+    nome_categoria = categoria.nome
+    categoria.delete()
+    messages.success(request, f'Categoria "{nome_categoria}" excluída com sucesso!')
+    return redirect("lista_categorias")
+
+
+@login_required
+def reordenar_categorias(request):
+    """Reordena categorias via AJAX."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Método não permitido"}, status=405)
+    
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pizzaria = usuario_pizzaria.pizzaria
+    
+    try:
+        # Receber lista de IDs na nova ordem
+        categoria_ids = request.POST.getlist('categoria_ids[]')
+        
+        for index, categoria_id in enumerate(categoria_ids):
+            CategoriaProduto.objects.filter(
+                id=categoria_id, 
+                pizzaria=pizzaria
+            ).update(ordem=index)
+        
+        return JsonResponse({"success": True, "message": "Ordem das categorias atualizada!"})
+    
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

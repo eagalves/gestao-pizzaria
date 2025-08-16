@@ -23,7 +23,7 @@ class CategoriaProduto(models.Model):
         ordering = ("ordem", "nome")
 
     def __str__(self):
-        return f"{self.nome} - {self.pizzaria.nome}"
+        return self.nome
 
 
 class Produto(models.Model):

@@ -1,0 +1,281 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Categorias - Gestão Pizzaria{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">Categorias do Cardápio</h2>
+        <p class="text-muted mb-0">Organize seu cardápio por categorias</p>
+    </div>
+    <div>
+        <a href="{% url 'lista_produtos' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i>Voltar para Produtos
+        </a>
+        <button class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+            <i class="fas fa-plus me-2"></i>Nova Categoria
+        </button>
+    </div>
+</div>
+
+<div class="d-flex gap-3 mb-3">
+    <div class="flex-grow-1 position-relative">
+        <input type="text" class="form-control ps-5" placeholder="Buscar categorias..." id="searchInput">
+        <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+    </div>
+    <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="btnReordenar">
+        <i class="fas fa-sort"></i>
+        Reordenar
+    </button>
+</div>
+
+<!-- Cards de Categorias -->
+<div class="row" id="categorias-container">
+    {% for categoria in categorias %}
+        <div class="col-md-6 col-lg-4 mb-4 categoria-card" data-categoria-id="{{ categoria.id }}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title mb-1">{{ categoria.nome }}</h5>
+                            <small class="text-muted">Ordem: {{ categoria.ordem }}</small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalEditarCategoria"
+                                       data-id="{{ categoria.id }}" data-nome="{{ categoria.nome|escapejs }}" data-ordem="{{ categoria.ordem }}">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'excluir_categoria' categoria.id %}" 
+                                       onclick="return confirm('Tem certeza que deseja excluir a categoria {{ categoria.nome|escapejs }}?')">
+                                    <i class="fas fa-trash me-2"></i>Excluir
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary-light text-primary">
+                                {{ categoria.total_produtos }} produto{{ categoria.total_produtos|pluralize }}
+                            </span>
+                        </div>
+                        <div class="drag-handle" style="cursor: move; display: none;">
+                            <i class="fas fa-grip-vertical text-muted"></i>
+                        </div>
+                    </div>
+                    
+                    {% if categoria.total_produtos > 0 %}
+                        <div class="mt-3">
+                            <a href="{% url 'lista_produtos' %}?categoria={{ categoria.id }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>Ver Produtos
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhuma categoria cadastrada</h4>
+                <p class="text-muted">Crie sua primeira categoria para organizar o cardápio</p>
+                <button class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
+                    <i class="fas fa-plus me-2"></i>Criar Primeira Categoria
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Modal Nova Categoria -->
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1" aria-labelledby="modalNovaCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'lista_categorias' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNovaCategoriaLabel">Nova Categoria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                        {{ form.nome }}
+                        {% if form.nome.help_text %}
+                            <div class="form-text">{{ form.nome.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.ordem.id_for_label }}" class="form-label">{{ form.ordem.label }}</label>
+                        {{ form.ordem }}
+                        {% if form.ordem.help_text %}
+                            <div class="form-text">{{ form.ordem.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">Criar Categoria</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Categoria -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1" aria-labelledby="modalEditarCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="formEditarCategoria">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarCategoriaLabel">Editar Categoria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Categoria</label>
+                        <input type="text" class="form-control" id="edit-nome" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ordem de Exibição</label>
+                        <input type="number" class="form-control" id="edit-ordem" name="ordem" min="0" required>
+                        <div class="form-text">Menor número aparece primeiro no cardápio</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+// Busca em tempo real
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const cards = document.querySelectorAll('.categoria-card');
+    
+    cards.forEach(card => {
+        const nome = card.querySelector('.card-title').textContent.toLowerCase();
+        if (nome.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// Modal de edição
+const modalEditarCategoria = document.getElementById('modalEditarCategoria');
+modalEditarCategoria.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const id = button.getAttribute('data-id');
+    const nome = button.getAttribute('data-nome');
+    const ordem = button.getAttribute('data-ordem');
+
+    document.getElementById('edit-nome').value = nome;
+    document.getElementById('edit-ordem').value = ordem;
+    document.getElementById('formEditarCategoria').action = `/produtos/categorias/${id}/editar/`;
+});
+
+// Funcionalidade de reordenação
+let sortable = null;
+let reorderMode = false;
+
+document.getElementById('btnReordenar').addEventListener('click', function() {
+    const container = document.getElementById('categorias-container');
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    const button = this;
+    
+    if (!reorderMode) {
+        // Ativar modo de reordenação
+        reorderMode = true;
+        button.innerHTML = '<i class="fas fa-save"></i> Salvar Ordem';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+        
+        // Mostrar handles de drag
+        dragHandles.forEach(handle => handle.style.display = 'block');
+        
+        // Ativar Sortable
+        sortable = Sortable.create(container, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+        
+    } else {
+        // Salvar nova ordem
+        const cards = container.querySelectorAll('.categoria-card');
+        const categoriaIds = Array.from(cards).map(card => card.dataset.categoriaId);
+        
+        // Enviar nova ordem para o servidor
+        const formData = new FormData();
+        categoriaIds.forEach(id => formData.append('categoria_ids[]', id));
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        fetch('{% url "reordenar_categorias" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao salvar ordem: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar ordem das categorias');
+        });
+    }
+});
+</script>
+
+<style>
+.bg-primary-light {
+    background-color: #e7f3ff !important;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.categoria-card {
+    transition: transform 0.2s ease;
+}
+
+.categoria-card:hover {
+    transform: translateY(-2px);
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+}
+
+.drag-handle:hover {
+    color: #0d6efd !important;
+}
+
+.card {
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

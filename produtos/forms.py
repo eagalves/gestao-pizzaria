@@ -35,3 +35,27 @@ class ProdutoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if pizzaria:
             self.fields['categoria'].queryset = CategoriaProduto.objects.filter(pizzaria=pizzaria)
+
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = CategoriaProduto
+        fields = ['nome', 'ordem']
+        widgets = {
+            'nome': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: Pizzas Tradicionais'
+            }),
+            'ordem': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': '0'
+            })
+        }
+        labels = {
+            'nome': 'Nome da Categoria',
+            'ordem': 'Ordem de Exibição'
+        }
+        help_texts = {
+            'ordem': 'Menor número aparece primeiro no cardápio'
+        }
