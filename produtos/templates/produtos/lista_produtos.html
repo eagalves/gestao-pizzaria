@@ -27,6 +27,7 @@
             <tr>
                 <th>Produto</th>
                 <th>Categoria</th>
+                <th>Ingredientes</th>
                 <th>Preço Base</th>
                 <th>Status</th>
                 <th class="text-end">Ações</th>
@@ -37,6 +38,15 @@
                 <tr>
                     <td class="fw-semibold">{{ produto.nome }}</td>
                     <td>{{ produto.categoria }}</td>
+                    <td>
+                        <small class="text-muted">
+                            {% for ingrediente_nome in produto.get_ingredientes_list %}
+                                {{ ingrediente_nome }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                Sem ingredientes
+                            {% endfor %}
+                        </small>
+                    </td>
                     <td>R$ {{ produto.preco_atual|floatformat:2 }}</td>
                     <td><span class="badge bg-success-light text-success">Disponível</span></td>
                     <td class="text-end">
@@ -46,19 +56,14 @@
                            data-descricao="{{ produto.descricao|default:''|escapejs }}"
                            data-categoria="{{ produto.categoria.id|default:'' }}"
                            data-preco="{{ produto.preco_atual }}"
-                           data-tempo="{{ produto.tempo_preparo_minutos }}"
-                           data-disponivel="{{ produto.disponivel|yesno:'1,0' }}"
-                           data-vegetariano="{{ produto.vegetariano|yesno:'1,0' }}"
-                           data-vegano="{{ produto.vegano|yesno:'1,0' }}"
-                           data-gluten="{{ produto.contem_gluten|yesno:'1,0' }}"
-                           data-lactose="{{ produto.contem_lactose|yesno:'1,0' }}">
+                           data-tempo="{{ produto.tempo_preparo_minutos }}">
                          <i class="fas fa-edit"></i></a>
                         <a href="{% url 'excluir_produto' produto.id %}" class="text-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?');"><i class="fas fa-trash-alt"></i></a>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
+                    <td colspan="6" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -163,13 +168,17 @@
               <label class="form-label">Tempo de Preparo (minutos)</label>
               <input type="number" class="form-control" id="edit-tempo" name="tempo_preparo_minutos" required>
             </div>
-            <div class="col-12 d-flex flex-wrap gap-4">
-              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-disponivel" name="disponivel"><label class="form-check-label" for="edit-disponivel">Disponível</label></div>
-              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-vegetariano" name="vegetariano"><label class="form-check-label" for="edit-vegetariano">Vegetariano</label></div>
-              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-vegano" name="vegano"><label class="form-check-label" for="edit-vegano">Vegano</label></div>
-              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-gluten" name="contem_gluten"><label class="form-check-label" for="edit-gluten">Contém Glúten</label></div>
-              <div class="form-check me-4"><input class="form-check-input" type="checkbox" id="edit-lactose" name="contem_lactose"><label class="form-check-label" for="edit-lactose">Contém Lactose</label></div>
+          </div>
+
+          <h6>Ingredientes</h6>
+          <div class="border rounded p-3 mb-3">
+            <div id="edit-ingredientes-container">
+              <p class="text-muted mb-2" id="edit-ingredientes-vazio">Nenhum ingrediente adicionado. Clique em "Adicionar" para incluir ingredientes.</p>
+              <div id="edit-ingredientes-lista"></div>
             </div>
+            <button type="button" class="btn btn-outline-secondary" id="btn-edit-add-ingrediente">
+              <i class="fas fa-plus me-2"></i>Adicionar
+            </button>
           </div>
         </div>
         <div class="modal-footer">
@@ -183,7 +192,9 @@
 
 <script>
 let ingredienteCount = 0;
+let editIngredienteCount = 0;
 
+// Função para adicionar ingrediente no modal de novo produto
 document.getElementById('btn-add-ingrediente').addEventListener('click', function() {
     ingredienteCount++;
     
@@ -231,6 +242,54 @@ document.getElementById('btn-add-ingrediente').addEventListener('click', functio
     ingredientesLista.appendChild(ingredienteDiv);
 });
 
+// Função para adicionar ingrediente no modal de edição
+document.getElementById('btn-edit-add-ingrediente').addEventListener('click', function() {
+    editIngredienteCount++;
+    
+    const ingredientesLista = document.getElementById('edit-ingredientes-lista');
+    const ingredientesVazio = document.getElementById('edit-ingredientes-vazio');
+    
+    // Esconde a mensagem de "nenhum ingrediente"
+    ingredientesVazio.style.display = 'none';
+    
+    const ingredienteDiv = document.createElement('div');
+    ingredienteDiv.className = 'row g-2 mb-2 align-items-end';
+    ingredienteDiv.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Ingrediente ${editIngredienteCount}</label>
+            <select class="form-select" name="ingrediente_${editIngredienteCount}">
+                <option value="">Selecione um ingrediente</option>
+                {% for ingrediente in ingredientes_disponiveis %}
+                    <option value="{{ ingrediente.id }}">{{ ingrediente.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Quantidade</label>
+            <input type="number" step="0.01" class="form-control" name="quantidade_${editIngredienteCount}" value="1">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Unidade</label>
+            <select class="form-select" name="unidade_${editIngredienteCount}">
+                <option value="g">Gramas (g)</option>
+                <option value="kg">Quilos (kg)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="l">Litros (l)</option>
+                <option value="un">Unidade</option>
+                <option value="fatia">Fatia</option>
+                <option value="pitada">Pitada</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.parentElement.remove(); verificarEditIngredientes();">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    ingredientesLista.appendChild(ingredienteDiv);
+});
+
 function verificarIngredientes() {
     const ingredientesLista = document.getElementById('ingredientes-lista');
     const ingredientesVazio = document.getElementById('ingredientes-vazio');
@@ -238,6 +297,71 @@ function verificarIngredientes() {
     if (ingredientesLista.children.length === 0) {
         ingredientesVazio.style.display = 'block';
     }
+}
+
+function verificarEditIngredientes() {
+    const ingredientesLista = document.getElementById('edit-ingredientes-lista');
+    const ingredientesVazio = document.getElementById('edit-ingredientes-vazio');
+    
+    if (ingredientesLista.children.length === 0) {
+        ingredientesVazio.style.display = 'block';
+    }
+}
+
+function adicionarIngredienteExistente(ingredienteId, ingredienteNome, quantidade, unidade) {
+    editIngredienteCount++;
+    
+    const ingredientesLista = document.getElementById('edit-ingredientes-lista');
+    const ingredientesVazio = document.getElementById('edit-ingredientes-vazio');
+    
+    // Esconde a mensagem de "nenhum ingrediente"
+    ingredientesVazio.style.display = 'none';
+    
+    const ingredienteDiv = document.createElement('div');
+    ingredienteDiv.className = 'row g-2 mb-2 align-items-end';
+    
+    // Criar o HTML base
+    ingredienteDiv.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Ingrediente ${editIngredienteCount}</label>
+            <select class="form-select" name="ingrediente_${editIngredienteCount}">
+                <option value="">Selecione um ingrediente</option>
+                {% for ingrediente in ingredientes_disponiveis %}
+                    <option value="{{ ingrediente.id }}">{{ ingrediente.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Quantidade</label>
+            <input type="number" step="0.01" class="form-control" name="quantidade_${editIngredienteCount}" value="${quantidade}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Unidade</label>
+            <select class="form-select" name="unidade_${editIngredienteCount}">
+                <option value="g">Gramas (g)</option>
+                <option value="kg">Quilos (kg)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="l">Litros (l)</option>
+                <option value="un">Unidade</option>
+                <option value="fatia">Fatia</option>
+                <option value="pitada">Pitada</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.parentElement.remove(); verificarEditIngredientes();">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    ingredientesLista.appendChild(ingredienteDiv);
+    
+    // Agora definir os valores selecionados
+    const selectIngrediente = ingredienteDiv.querySelector('select[name^="ingrediente_"]');
+    const selectUnidade = ingredienteDiv.querySelector('select[name^="unidade_"]');
+    
+    selectIngrediente.value = ingredienteId;
+    selectUnidade.value = unidade;
 }
 
 const modalEditarProduto = document.getElementById('modalEditarProduto');
@@ -249,22 +373,35 @@ modalEditarProduto.addEventListener('show.bs.modal', function (event) {
   const categoria = button.getAttribute('data-categoria');
   const preco = button.getAttribute('data-preco');
   const tempo = button.getAttribute('data-tempo');
-  const disponivel = button.getAttribute('data-disponivel') === '1';
-  const vegetariano = button.getAttribute('data-vegetariano') === '1';
-  const vegano = button.getAttribute('data-vegano') === '1';
-  const gluten = button.getAttribute('data-gluten') === '1';
-  const lactose = button.getAttribute('data-lactose') === '1';
-
   document.getElementById('edit-nome').value = nome;
   document.getElementById('edit-descricao').value = descricao;
   document.getElementById('edit-categoria').value = categoria;
   document.getElementById('edit-preco').value = preco;
   document.getElementById('edit-tempo').value = tempo;
-  document.getElementById('edit-disponivel').checked = disponivel;
-  document.getElementById('edit-vegetariano').checked = vegetariano;
-  document.getElementById('edit-vegano').checked = vegano;
-  document.getElementById('edit-gluten').checked = gluten;
-  document.getElementById('edit-lactose').checked = lactose;
+
+  // Limpar ingredientes anteriores
+  const ingredientesLista = document.getElementById('edit-ingredientes-lista');
+  const ingredientesVazio = document.getElementById('edit-ingredientes-vazio');
+  ingredientesLista.innerHTML = '';
+  editIngredienteCount = 0;
+
+  // Carregar ingredientes existentes via AJAX
+  fetch(`/produtos/${id}/ingredientes/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.ingredientes && data.ingredientes.length > 0) {
+        ingredientesVazio.style.display = 'none';
+        data.ingredientes.forEach(ing => {
+          adicionarIngredienteExistente(ing.ingrediente_id, ing.ingrediente_nome, ing.quantidade, ing.unidade);
+        });
+      } else {
+        ingredientesVazio.style.display = 'block';
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao carregar ingredientes:', error);
+      ingredientesVazio.style.display = 'block';
+    });
 
   document.getElementById('formEditarProduto').action = `/produtos/${id}/editar/`;
 });

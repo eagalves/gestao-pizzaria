@@ -67,6 +67,14 @@ class Produto(models.Model):
         preco = self.precos.filter(data_fim__isnull=True).order_by("-data_inicio").first()
         return preco.valor if preco else 0
 
+    def get_ingredientes(self):
+        """Retorna todos os ingredientes do produto com suas quantidades."""
+        return self.produto_ingredientes.select_related('ingrediente').all()
+    
+    def get_ingredientes_list(self):
+        """Retorna uma lista simples dos nomes dos ingredientes."""
+        return [pi.ingrediente.nome for pi in self.produto_ingredientes.all()]
+
 
 class PrecoProduto(models.Model):
     """Histórico de preços de um produto."""
