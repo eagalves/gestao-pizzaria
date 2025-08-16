@@ -58,7 +58,7 @@ def lista_pedidos(request):
 
     # GET - listar
     pedidos = Pedido.objects.filter(pizzaria=pizzaria).select_related("pizzaria").prefetch_related("itens__produto")
-    produtos = Produto.objects.filter(pizzaria=pizzaria, disponivel=True)
+    produtos = Produto.objects.filter(pizzaria=pizzaria, disponivel=True).order_by('nome')
 
     context = {
         "pedidos": pedidos,
