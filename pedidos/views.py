@@ -103,3 +103,66 @@ def alterar_status_pedido(request, pedido_id):
         "status_display": status_display,
         "message": f"Status do pedido #{pedido.id} alterado para {status_display}"
     })
+
+
+@login_required
+def detalhes_pedido(request, pedido_id):
+    """Retorna detalhes do pedido em JSON para o modal."""
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and pedido.pizzaria != usuario_pizzaria.pizzaria:
+        return JsonResponse({"error": "Permissão negada"}, status=403)
+    
+    # Preparar dados do pedido
+    itens = []
+    for item in pedido.itens.select_related('produto').all():
+        itens.append({
+            'produto_nome': item.produto.nome,
+            'quantidade': item.quantidade,
+            'valor_unitario': str(item.valor_unitario),
+            'subtotal': str(item.subtotal),
+            'observacao': item.observacao_item or ''
+        })
+    
+    dados = {
+        'id': pedido.id,
+        'cliente_nome': pedido.cliente_nome or 'Cliente não informado',
+        'cliente_telefone': pedido.cliente_telefone or '',
+        'data_criacao': pedido.data_criacao.strftime('%d/%m/%Y às %H:%M'),
+        'status': pedido.get_status_display(),
+        'forma_pagamento': pedido.get_forma_pagamento_display(),
+        'observacoes': pedido.observacoes or '',
+        'total': str(pedido.total),
+        'itens': itens
+    }
+    
+    return JsonResponse(dados)
+
+
+@login_required
+def cancelar_pedido(request, pedido_id):
+    """Cancela um pedido."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Método não permitido"}, status=405)
+    
+    usuario_pizzaria = get_object_or_404(UsuarioPizzaria, usuario=request.user, ativo=True)
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar permissão
+    if not usuario_pizzaria.is_super_admin() and pedido.pizzaria != usuario_pizzaria.pizzaria:
+        return JsonResponse({"error": "Permissão negada"}, status=403)
+    
+    # Verificar se pode cancelar
+    if pedido.status in ['ENTREGUE', 'CANCELADO']:
+        return JsonResponse({"error": f"Não é possível cancelar pedido {pedido.get_status_display().lower()}"}, status=400)
+    
+    # Cancelar pedido
+    pedido.status = 'CANCELADO'
+    pedido.save(update_fields=['status', 'data_atualizacao'])
+    
+    return JsonResponse({
+        "success": True,
+        "message": f"Pedido #{pedido.id} cancelado com sucesso"
+    })

@@ -30,6 +30,7 @@
                 <th>Data/Hora</th>
                 <th>Total</th>
                 <th>Status</th>
+                <th>Obs.</th>
                 <th class="text-end">Ações</th>
             </tr>
         </thead>
@@ -78,15 +79,28 @@
                             </div>
                         {% endif %}
                     </td>
+                    <td>
+                        {% if pedido.observacoes %}
+                            <i class="fas fa-comment text-info" title="{{ pedido.observacoes }}" data-bs-toggle="tooltip"></i>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end">
-                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalDetalhesPedido"><i class="fas fa-eye"></i></a>
-                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarPedido"><i class="fas fa-edit"></i></a>
-                        <a href="#" class="text-danger" onclick="return confirm('Cancelar este pedido?');"><i class="fas fa-times-circle"></i></a>
+                        <a href="#" class="text-orange me-3 btn-detalhes" data-pedido-id="{{ pedido.id }}" title="Ver detalhes">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="#" class="text-orange me-3 btn-editar" data-pedido-id="{{ pedido.id }}" title="Editar pedido">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="#" class="text-danger btn-cancelar" data-pedido-id="{{ pedido.id }}" title="Cancelar pedido">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">Nenhum pedido registrado</td>
+                    <td colspan="7" class="text-center py-5 text-muted">Nenhum pedido registrado</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -140,8 +154,8 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Observações do Pedido</label>
-              <input type="text" class="form-control" name="observacoes" placeholder="Ex.: Sem cebola em metade da pizza">
+              <label class="form-label">Observações Gerais do Pedido</label>
+              <textarea class="form-control" name="observacoes" rows="2" placeholder="Ex.: Entrega no portão dos fundos, sem cebola na pizza margherita"></textarea>
             </div>
           </div>
         </div>
@@ -157,6 +171,69 @@
       </form>
     </div>
   </div>
+</div>
+
+<!-- Modal Detalhes do Pedido -->
+<div class="modal fade" id="modalDetalhesPedido" tabindex="-1" aria-labelledby="modalDetalhesPedidoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetalhesPedidoLabel">Detalhes do Pedido #<span id="detalhes-pedido-id"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Cliente:</strong> <span id="detalhes-cliente"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Telefone:</strong> <span id="detalhes-telefone"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Data/Hora:</strong> <span id="detalhes-data"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong> <span id="detalhes-status" class="badge"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Forma de Pagamento:</strong> <span id="detalhes-pagamento"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Total:</strong> <span id="detalhes-total" class="fw-bold text-success"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="detalhes-observacoes-container">
+                    <strong>Observações:</strong>
+                    <div class="mt-1 p-2 bg-light rounded" id="detalhes-observacoes"></div>
+                </div>
+
+                <h6>Itens do Pedido:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Qtd.</th>
+                                <th>Valor Unit.</th>
+                                <th>Subtotal</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detalhes-itens">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -199,8 +276,8 @@ document.getElementById('btn-add-item').addEventListener('click', () => {
       <input type="number" min="1" value="1" class="form-control qtd-input" name="item_qtd_${itemCount}" required>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Obs.</label>
-      <input type="text" class="form-control" name="item_obs_${itemCount}">
+      <label class="form-label">Observações do Item</label>
+      <input type="text" class="form-control" name="item_obs_${itemCount}" placeholder="Ex.: Sem queijo">
     </div>
     <div class="col-md-2 d-flex align-items-end">
       <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.item-row').remove(); atualizarTotais();"><i class="fas fa-trash"></i></button>
@@ -215,6 +292,14 @@ document.getElementById('btn-add-item').addEventListener('click', () => {
     atualizarTotais();
   });
   row.querySelector('.qtd-input').addEventListener('input', atualizarTotais);
+});
+
+// Inicializar tooltips do Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
 });
 
 // Função para alterar status do pedido
@@ -284,6 +369,99 @@ document.addEventListener('click', function(e) {
     
     const statusNome = statusNames[novoStatus] || novoStatus;
     alterarStatus(pedidoId, novoStatus, statusNome, button);
+  }
+});
+
+// Botão Ver Detalhes
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.btn-detalhes')) {
+    e.preventDefault();
+    const pedidoId = e.target.closest('.btn-detalhes').getAttribute('data-pedido-id');
+    
+    // Carregar detalhes via AJAX
+    fetch(`/pedidos/${pedidoId}/detalhes/`)
+      .then(response => response.json())
+      .then(data => {
+        // Preencher modal com dados
+        document.getElementById('detalhes-pedido-id').textContent = data.id;
+        document.getElementById('detalhes-cliente').textContent = data.cliente_nome;
+        document.getElementById('detalhes-telefone').textContent = data.cliente_telefone || 'Não informado';
+        document.getElementById('detalhes-data').textContent = data.data_criacao;
+        document.getElementById('detalhes-status').textContent = data.status;
+        document.getElementById('detalhes-status').className = 'badge bg-primary';
+        document.getElementById('detalhes-pagamento').textContent = data.forma_pagamento;
+        document.getElementById('detalhes-total').textContent = 'R$ ' + parseFloat(data.total).toFixed(2);
+        
+        // Observações
+        const obsContainer = document.getElementById('detalhes-observacoes-container');
+        const obsElement = document.getElementById('detalhes-observacoes');
+        if (data.observacoes) {
+          obsContainer.style.display = 'block';
+          obsElement.textContent = data.observacoes;
+        } else {
+          obsContainer.style.display = 'none';
+        }
+        
+        // Itens
+        const itensContainer = document.getElementById('detalhes-itens');
+        itensContainer.innerHTML = '';
+        data.itens.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.produto_nome}</td>
+            <td>${item.quantidade}</td>
+            <td>R$ ${parseFloat(item.valor_unitario).toFixed(2)}</td>
+            <td>R$ ${parseFloat(item.subtotal).toFixed(2)}</td>
+            <td>${item.observacao || '-'}</td>
+          `;
+          itensContainer.appendChild(row);
+        });
+        
+        // Abrir modal
+        new bootstrap.Modal(document.getElementById('modalDetalhesPedido')).show();
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao carregar detalhes do pedido');
+      });
+  }
+});
+
+// Botão Cancelar
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.btn-cancelar')) {
+    e.preventDefault();
+    const pedidoId = e.target.closest('.btn-cancelar').getAttribute('data-pedido-id');
+    
+    if (confirm(`Tem certeza que deseja cancelar o pedido #${pedidoId}?`)) {
+      fetch(`/pedidos/${pedidoId}/cancelar/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          location.reload();
+        } else {
+          alert('Erro: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao cancelar pedido');
+      });
+    }
+  }
+});
+
+// Botão Editar (por enquanto só um alerta)
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.btn-editar')) {
+    e.preventDefault();
+    alert('Funcionalidade de edição em desenvolvimento!');
   }
 });
 </script>
