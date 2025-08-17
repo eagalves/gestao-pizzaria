@@ -27,6 +27,17 @@ class Pedido(models.Model):
         on_delete=models.CASCADE,
         related_name="pedidos",
     )
+    
+    # Relacionamento com Cliente (opcional - para pedidos de balcão)
+    cliente = models.ForeignKey(
+        'clientes.Cliente',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pedidos"
+    )
+    
+    # Campos para pedidos sem cadastro de cliente (balcão/telefone)
     cliente_nome = models.CharField(max_length=120, blank=True)
     cliente_telefone = models.CharField(max_length=20, blank=True)
     observacoes = models.CharField(max_length=255, blank=True)
@@ -49,6 +60,18 @@ class Pedido(models.Model):
         soma = sum(item.subtotal for item in self.itens.all())
         self.total = soma
         self.save(update_fields=["total"])
+    
+    def get_cliente_nome(self):
+        """Retorna o nome do cliente (cadastrado ou informado)"""
+        if self.cliente:
+            return self.cliente.nome
+        return self.cliente_nome or "Cliente não informado"
+    
+    def get_cliente_telefone(self):
+        """Retorna o telefone do cliente (cadastrado ou informado)"""
+        if self.cliente:
+            return self.cliente.telefone
+        return self.cliente_telefone or ""
 
 
 class ItemPedido(models.Model):

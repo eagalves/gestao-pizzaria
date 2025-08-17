@@ -38,7 +38,7 @@
             {% for pedido in pedidos %}
                 <tr>
                     <td>{{ pedido.id }}</td>
-                    <td>{{ pedido.cliente_nome }}</td>
+                    <td>{{ pedido.get_cliente_nome }}</td>
                     <td>{{ pedido.data_criacao }}</td>
                     <td>R$ {{ pedido.total|floatformat:2 }}</td>
                     <td>
