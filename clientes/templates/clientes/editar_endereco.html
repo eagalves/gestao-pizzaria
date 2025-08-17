@@ -1,0 +1,159 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Editar Endereço{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-edit text-orange me-3"></i>Editar Endereço</h2>
+    <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Cliente: {{ cliente.nome }}
+                </h5>
+                <small class="text-muted">{{ cliente.telefone }} • Editando: {{ endereco.nome }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.cep.label }}</label>
+                            <div class="input-group">
+                                {{ form.cep }}
+                                <button type="button" class="btn btn-outline-secondary" id="btn-buscar-cep">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">{{ form.rua.label }}</label>
+                            {{ form.rua }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.numero.label }}</label>
+                            {{ form.numero }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ form.complemento.label }}</label>
+                            {{ form.complemento }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.bairro.label }}</label>
+                            {{ form.bairro }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.cidade.label }}</label>
+                            {{ form.cidade }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ form.estado.label }}</label>
+                            {{ form.estado }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ form.referencia.label }}</label>
+                            {{ form.referencia }}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-orange">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                        <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Busca CEP via ViaCEP
+    document.getElementById('btn-buscar-cep').addEventListener('click', function() {
+        const cepInput = document.getElementById('id_cep');
+        const cep = cepInput.value.replace(/\D/g, '');
+        
+        if (cep.length !== 8) {
+            alert('CEP deve ter 8 dígitos');
+            return;
+        }
+        
+        const btn = this;
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    alert('CEP não encontrado');
+                } else {
+                    document.getElementById('id_rua').value = data.logradouro || '';
+                    document.getElementById('id_bairro').value = data.bairro || '';
+                    document.getElementById('id_cidade').value = data.localidade || '';
+                    document.getElementById('id_estado').value = data.uf || '';
+                    
+                    // Foca no campo número
+                    document.getElementById('id_numero').focus();
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar CEP:', error);
+                alert('Erro ao buscar CEP');
+            })
+            .finally(() => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            });
+    });
+    
+    // Formatar CEP
+    document.getElementById('id_cep').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 5) {
+            value = value.substring(0, 5) + '-' + value.substring(5, 8);
+        }
+        e.target.value = value;
+    });
+    
+    // Buscar CEP ao pressionar Enter
+    document.getElementById('id_cep').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-buscar-cep').click();
+        }
+    });
+});
+</script>
+
+<style>
+.text-orange {
+    color: #ff6b35 !important;
+}
+
+.btn-orange {
+    background-color: #ff6b35;
+    border-color: #ff6b35;
+    color: white;
+}
+
+.btn-orange:hover {
+    background-color: #e55a2e;
+    border-color: #e55a2e;
+    color: white;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,1044 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users text-orange me-3"></i>Clientes</h2>
+    <button type="button" class="btn btn-orange" data-bs-toggle="modal" data-bs-target="#modalNovoCliente">
+        <i class="fas fa-plus me-2"></i>Novo Cliente
+    </button>
+</div>
+
+<!-- Barra de busca e filtros -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="GET" class="d-flex">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" name="busca" value="{{ busca }}" 
+                       placeholder="Buscar por nome, telefone ou e-mail...">
+                <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                {% if busca %}
+                    <a href="{% url 'lista_clientes' %}" class="btn btn-outline-danger">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <small class="text-muted">
+            Total: {{ total_clientes }} cliente{{ total_clientes|pluralize }}
+        </small>
+    </div>
+</div>
+
+<!-- Tabela de clientes -->
+<div class="table-responsive">
+    <table class="table table-light align-middle">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Endereço Principal</th>
+                <th class="text-center">Pedidos</th>
+                <th class="text-center">Total Gasto</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+                <tr>
+                    <td>
+                        <div>
+                            <strong>{{ cliente.nome }}</strong>
+                            {% if cliente.data_nascimento %}
+                                <br><small class="text-muted">
+                                    <i class="fas fa-birthday-cake me-1"></i>{{ cliente.data_nascimento|date:"d/m/Y" }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="tel:{{ cliente.telefone }}" class="text-decoration-none">
+                            <i class="fas fa-phone text-success me-1"></i>{{ cliente.telefone }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if cliente.email %}
+                            <a href="mailto:{{ cliente.email }}" class="text-decoration-none">
+                                <i class="fas fa-envelope text-primary me-1"></i>{{ cliente.email }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if cliente.endereco_principal %}
+                            <small class="text-muted">{{ cliente.endereco_principal.endereco_completo }}</small>
+                        {% else %}
+                            <span class="text-muted">Sem endereço</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-info">{{ cliente.total_pedidos }}</span>
+                    </td>
+                    <td class="text-center">
+                        <strong class="text-success">R$ {{ cliente.total_gasto|floatformat:2 }}</strong>
+                    </td>
+                    <td class="text-end">
+                        <a href="#" class="text-orange me-3 btn-detalhes" data-cliente-id="{{ cliente.id }}" title="Ver detalhes">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="#" class="text-orange me-3 btn-editar-cliente" data-cliente-id="{{ cliente.id }}" title="Editar cliente">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="#" class="text-danger btn-excluir" data-cliente-id="{{ cliente.id }}" data-cliente-nome="{{ cliente.nome }}" title="Excluir cliente">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        {% if busca %}
+                            Nenhum cliente encontrado para "{{ busca }}"
+                        {% else %}
+                            Nenhum cliente cadastrado
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginação -->
+{% if clientes.has_other_pages %}
+    <nav aria-label="Paginação de clientes">
+        <ul class="pagination justify-content-center">
+            {% if clientes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if busca %}&busca={{ busca }}{% endif %}">Primeira</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clientes.previous_page_number }}{% if busca %}&busca={{ busca }}{% endif %}">Anterior</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ clientes.number }} de {{ clientes.paginator.num_pages }}</span>
+            </li>
+            
+            {% if clientes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clientes.next_page_number }}{% if busca %}&busca={{ busca }}{% endif %}">Próxima</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clientes.paginator.num_pages }}{% if busca %}&busca={{ busca }}{% endif %}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+<!-- Modal Novo Cliente -->
+<div class="modal fade" id="modalNovoCliente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus text-orange me-2"></i>Novo Cliente
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dados do Cliente -->
+                    <h6><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.telefone.label }}</label>
+                            {{ form.telefone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.data_nascimento.label }}</label>
+                            {{ form.data_nascimento }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ form.observacoes.label }}</label>
+                            {{ form.observacoes }}
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço (Opcional) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6><i class="fas fa-map-marker-alt me-2"></i>Endereço (Opcional)</h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="incluir-endereco">
+                            <label class="form-check-label" for="incluir-endereco">
+                                Cadastrar endereço
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="campos-endereco" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome do Endereço</label>
+                                <input type="text" class="form-control" name="endereco_nome" placeholder="Ex: Casa, Trabalho">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">CEP</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="endereco_cep" placeholder="12345-678" maxlength="10" id="novo-cliente-cep">
+                                    <button type="button" class="btn btn-outline-secondary" id="btn-buscar-cep-novo">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Rua/Avenida</label>
+                                <input type="text" class="form-control" name="endereco_rua" placeholder="Nome da rua" id="novo-cliente-rua">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Número</label>
+                                <input type="text" class="form-control" name="endereco_numero" placeholder="123" id="novo-cliente-numero">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Complemento</label>
+                                <input type="text" class="form-control" name="endereco_complemento" placeholder="Apto, Bloco, etc. (opcional)" id="novo-cliente-complemento">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bairro</label>
+                                <input type="text" class="form-control" name="endereco_bairro" placeholder="Nome do bairro" id="novo-cliente-bairro">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" class="form-control" name="endereco_cidade" placeholder="Nome da cidade" id="novo-cliente-cidade">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Estado</label>
+                                <select class="form-control" name="endereco_estado" id="novo-cliente-estado">
+                                    <option value="">---</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Referência</label>
+                                <input type="text" class="form-control" name="endereco_referencia" placeholder="Ponto de referência (opcional)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">
+                        <i class="fas fa-save me-2"></i>Salvar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Cliente -->
+<div class="modal fade" id="modalEditarCliente" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="formEditarCliente">
+                {% csrf_token %}
+                <input type="hidden" id="edit-cliente-id" name="cliente_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-edit text-orange me-2"></i>Editar Cliente
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-loading" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-orange"></i>
+                        <p class="mt-2">Carregando...</p>
+                    </div>
+                    
+                    <div id="edit-content" style="display: none;">
+                        <!-- Dados do Cliente -->
+                        <h6><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="edit-nome" name="nome" placeholder="Nome completo do cliente" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone</label>
+                                <input type="text" class="form-control" id="edit-telefone" name="telefone" placeholder="(11) 99999-9999" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="edit-email" name="email" placeholder="cliente@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de Nascimento</label>
+                                <input type="date" class="form-control" id="edit-data-nascimento" name="data_nascimento">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observações</label>
+                                <textarea class="form-control" id="edit-observacoes" name="observacoes" rows="3" placeholder="Observações sobre o cliente (opcional)"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Estatísticas do Cliente -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="text-center p-2 border rounded bg-light">
+                                    <div class="h5 mb-0 text-primary" id="edit-stats-pedidos">0</div>
+                                    <small class="text-muted">Pedidos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-2 border rounded bg-light">
+                                    <div class="h5 mb-0 text-success" id="edit-stats-gasto">R$ 0,00</div>
+                                    <small class="text-muted">Total Gasto</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-2 border rounded bg-light">
+                                    <div class="h5 mb-0 text-info" id="edit-stats-ticket">R$ 0,00</div>
+                                    <small class="text-muted">Ticket Médio</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Endereços -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Endereços</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-adicionar-endereco-modal">
+                                <i class="fas fa-plus me-1"></i>Adicionar Endereço
+                            </button>
+                        </div>
+                        
+                        <div id="edit-enderecos-lista">
+                            <!-- Endereços serão carregados aqui -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">
+                        <i class="fas fa-save me-2"></i>Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Adicionar Endereço (dentro do modal de editar) -->
+<div class="modal fade" id="modalAdicionarEndereco" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formAdicionarEndereco">
+                {% csrf_token %}
+                <input type="hidden" id="endereco-cliente-id" name="cliente_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-map-marker-alt text-orange me-2"></i>Adicionar Endereço
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome do Endereço</label>
+                            <input type="text" class="form-control" name="endereco_nome" placeholder="Ex: Casa, Trabalho" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">CEP</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="endereco_cep" placeholder="12345-678" maxlength="10" id="modal-endereco-cep" required>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-buscar-cep-modal">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Rua/Avenida</label>
+                            <input type="text" class="form-control" name="endereco_rua" placeholder="Nome da rua" id="modal-endereco-rua" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Número</label>
+                            <input type="text" class="form-control" name="endereco_numero" placeholder="123" id="modal-endereco-numero" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Complemento</label>
+                            <input type="text" class="form-control" name="endereco_complemento" placeholder="Apto, Bloco, etc. (opcional)" id="modal-endereco-complemento">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Bairro</label>
+                            <input type="text" class="form-control" name="endereco_bairro" placeholder="Nome do bairro" id="modal-endereco-bairro" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" class="form-control" name="endereco_cidade" placeholder="Nome da cidade" id="modal-endereco-cidade" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Estado</label>
+                            <select class="form-control" name="endereco_estado" id="modal-endereco-estado" required>
+                                <option value="">---</option>
+                                <option value="AC">AC</option>
+                                <option value="AL">AL</option>
+                                <option value="AP">AP</option>
+                                <option value="AM">AM</option>
+                                <option value="BA">BA</option>
+                                <option value="CE">CE</option>
+                                <option value="DF">DF</option>
+                                <option value="ES">ES</option>
+                                <option value="GO">GO</option>
+                                <option value="MA">MA</option>
+                                <option value="MT">MT</option>
+                                <option value="MS">MS</option>
+                                <option value="MG">MG</option>
+                                <option value="PA">PA</option>
+                                <option value="PB">PB</option>
+                                <option value="PR">PR</option>
+                                <option value="PE">PE</option>
+                                <option value="PI">PI</option>
+                                <option value="RJ">RJ</option>
+                                <option value="RN">RN</option>
+                                <option value="RS">RS</option>
+                                <option value="RO">RO</option>
+                                <option value="RR">RR</option>
+                                <option value="SC">SC</option>
+                                <option value="SP">SP</option>
+                                <option value="SE">SE</option>
+                                <option value="TO">TO</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Referência</label>
+                            <input type="text" class="form-control" name="endereco_referencia" placeholder="Ponto de referência (opcional)">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">
+                        <i class="fas fa-save me-2"></i>Salvar Endereço
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalhes do Cliente -->
+<div class="modal fade" id="modalDetalhesCliente" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user text-orange me-2"></i>Detalhes do Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detalhes-loading" class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-orange"></i>
+                    <p class="mt-2">Carregando...</p>
+                </div>
+                <div id="detalhes-content" style="display: none;">
+                    <!-- Conteúdo será carregado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ==================== CONTROLE DO MODAL NOVO CLIENTE ====================
+    
+    // Toggle dos campos de endereço
+    const incluirEnderecoCheckbox = document.getElementById('incluir-endereco');
+    const camposEndereco = document.getElementById('campos-endereco');
+    
+    if (incluirEnderecoCheckbox) {
+        incluirEnderecoCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                camposEndereco.style.display = 'block';
+                // Definir nome padrão se estiver vazio
+                const nomeEnderecoInput = document.querySelector('input[name="endereco_nome"]');
+                if (nomeEnderecoInput && !nomeEnderecoInput.value) {
+                    nomeEnderecoInput.value = 'Casa';
+                }
+            } else {
+                camposEndereco.style.display = 'none';
+                // Limpar campos de endereço
+                limparCamposEndereco();
+            }
+        });
+    }
+    
+    // Função para limpar campos de endereço
+    function limparCamposEndereco() {
+        const campos = ['endereco_nome', 'endereco_cep', 'endereco_rua', 'endereco_numero', 
+                       'endereco_complemento', 'endereco_bairro', 'endereco_cidade', 'endereco_referencia'];
+        campos.forEach(campo => {
+            const input = document.querySelector(`input[name="${campo}"]`);
+            if (input) input.value = '';
+        });
+        const estadoSelect = document.querySelector('select[name="endereco_estado"]');
+        if (estadoSelect) estadoSelect.value = '';
+    }
+    
+    // Busca CEP via ViaCEP no modal novo cliente
+    const btnBuscarCepNovo = document.getElementById('btn-buscar-cep-novo');
+    if (btnBuscarCepNovo) {
+        btnBuscarCepNovo.addEventListener('click', function() {
+            const cepInput = document.getElementById('novo-cliente-cep');
+            const cep = cepInput.value.replace(/\D/g, '');
+            
+            if (cep.length !== 8) {
+                alert('CEP deve ter 8 dígitos');
+                return;
+            }
+            
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado');
+                    } else {
+                        document.getElementById('novo-cliente-rua').value = data.logradouro || '';
+                        document.getElementById('novo-cliente-bairro').value = data.bairro || '';
+                        document.getElementById('novo-cliente-cidade').value = data.localidade || '';
+                        document.getElementById('novo-cliente-estado').value = data.uf || '';
+                        
+                        // Foca no campo número
+                        document.getElementById('novo-cliente-numero').focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
+                    alert('Erro ao buscar CEP');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                });
+        });
+    }
+    
+    // Formatar CEP no modal novo cliente
+    const novoCepInput = document.getElementById('novo-cliente-cep');
+    if (novoCepInput) {
+        novoCepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5, 8);
+            }
+            e.target.value = value;
+        });
+        
+        // Buscar CEP ao pressionar Enter
+        novoCepInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnBuscarCepNovo.click();
+            }
+        });
+    }
+    
+    // Limpar campos ao fechar modal
+    const modalNovoCliente = document.getElementById('modalNovoCliente');
+    if (modalNovoCliente) {
+        modalNovoCliente.addEventListener('hidden.bs.modal', function() {
+            // Reset do checkbox
+            if (incluirEnderecoCheckbox) {
+                incluirEnderecoCheckbox.checked = false;
+                camposEndereco.style.display = 'none';
+            }
+            // Limpar campos de endereço
+            limparCamposEndereco();
+        });
+    }
+    
+    // ==================== MODAL EDITAR CLIENTE ====================
+    
+    // Botão Editar Cliente
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-editar-cliente')) {
+            e.preventDefault();
+            const clienteId = e.target.closest('.btn-editar-cliente').dataset.clienteId;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarCliente'));
+            modal.show();
+            
+            // Mostrar loading
+            document.getElementById('edit-loading').style.display = 'block';
+            document.getElementById('edit-content').style.display = 'none';
+            
+            // Carregar dados do cliente via AJAX
+            fetch(`/clientes/${clienteId}/detalhes/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit-loading').style.display = 'none';
+                    document.getElementById('edit-content').style.display = 'block';
+                    
+                    // Preencher formulário
+                    document.getElementById('edit-cliente-id').value = data.id;
+                    document.getElementById('edit-nome').value = data.nome;
+                    document.getElementById('edit-telefone').value = data.telefone;
+                    document.getElementById('edit-email').value = data.email || '';
+                    document.getElementById('edit-data-nascimento').value = data.data_nascimento ? data.data_nascimento.split('/').reverse().join('-') : '';
+                    document.getElementById('edit-observacoes').value = data.observacoes || '';
+                    
+                    // Preencher estatísticas
+                    document.getElementById('edit-stats-pedidos').textContent = data.stats.total_pedidos;
+                    document.getElementById('edit-stats-gasto').textContent = data.stats.total_gasto;
+                    document.getElementById('edit-stats-ticket').textContent = data.stats.ticket_medio;
+                    
+                    // Carregar endereços
+                    carregarEnderecos(data.enderecos);
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados:', error);
+                    document.getElementById('edit-loading').style.display = 'none';
+                    document.getElementById('edit-content').innerHTML = '<p class="text-danger text-center">Erro ao carregar dados do cliente.</p>';
+                });
+        }
+    });
+    
+    // Função para carregar endereços no modal
+    function carregarEnderecos(enderecos) {
+        const container = document.getElementById('edit-enderecos-lista');
+        
+        if (enderecos.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-3">Nenhum endereço cadastrado</p>';
+            return;
+        }
+        
+        let html = '';
+        enderecos.forEach(endereco => {
+            html += `
+                <div class="border rounded p-3 mb-2 endereco-item" data-endereco-id="${endereco.id}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${endereco.nome}</h6>
+                            <p class="mb-0 small text-muted">${endereco.endereco}</p>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item btn-definir-principal" href="#" data-endereco-id="${endereco.id}">
+                                    <i class="fas fa-star me-2"></i>Definir como Principal
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger btn-excluir-endereco-modal" href="#" data-endereco-id="${endereco.id}" data-endereco-nome="${endereco.nome}">
+                                    <i class="fas fa-trash me-2"></i>Excluir
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    // Formulário de editar cliente
+    document.getElementById('formEditarCliente').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const clienteId = document.getElementById('edit-cliente-id').value;
+        
+        fetch(`/clientes/${clienteId}/editar/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                throw new Error('Erro ao salvar');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar alterações');
+        });
+    });
+    
+    // Botão adicionar endereço no modal
+    document.getElementById('btn-adicionar-endereco-modal').addEventListener('click', function() {
+        const clienteId = document.getElementById('edit-cliente-id').value;
+        document.getElementById('endereco-cliente-id').value = clienteId;
+        
+        const modalEndereco = new bootstrap.Modal(document.getElementById('modalAdicionarEndereco'));
+        modalEndereco.show();
+    });
+    
+    // Busca CEP no modal de endereço
+    const btnBuscarCepModal = document.getElementById('btn-buscar-cep-modal');
+    if (btnBuscarCepModal) {
+        btnBuscarCepModal.addEventListener('click', function() {
+            const cepInput = document.getElementById('modal-endereco-cep');
+            const cep = cepInput.value.replace(/\D/g, '');
+            
+            if (cep.length !== 8) {
+                alert('CEP deve ter 8 dígitos');
+                return;
+            }
+            
+            const btn = this;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado');
+                    } else {
+                        document.getElementById('modal-endereco-rua').value = data.logradouro || '';
+                        document.getElementById('modal-endereco-bairro').value = data.bairro || '';
+                        document.getElementById('modal-endereco-cidade').value = data.localidade || '';
+                        document.getElementById('modal-endereco-estado').value = data.uf || '';
+                        
+                        // Foca no campo número
+                        document.getElementById('modal-endereco-numero').focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
+                    alert('Erro ao buscar CEP');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                });
+        });
+    }
+    
+    // Formatar CEP no modal de endereço
+    const modalCepInput = document.getElementById('modal-endereco-cep');
+    if (modalCepInput) {
+        modalCepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5, 8);
+            }
+            e.target.value = value;
+        });
+        
+        // Buscar CEP ao pressionar Enter
+        modalCepInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnBuscarCepModal.click();
+            }
+        });
+    }
+    
+    // Formulário adicionar endereço
+    document.getElementById('formAdicionarEndereco').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const clienteId = formData.get('cliente_id');
+        
+        fetch(`/clientes/${clienteId}/endereco/adicionar/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Fechar modal de endereço
+                const modalEndereco = bootstrap.Modal.getInstance(document.getElementById('modalAdicionarEndereco'));
+                modalEndereco.hide();
+                
+                // Recarregar dados do cliente no modal de editar
+                document.querySelector(`[data-cliente-id="${clienteId}"].btn-editar-cliente`).click();
+            } else {
+                throw new Error('Erro ao salvar endereço');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar endereço');
+        });
+    });
+    
+    // Definir endereço como principal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-definir-principal')) {
+            e.preventDefault();
+            const enderecoId = e.target.closest('.btn-definir-principal').dataset.enderecoId;
+            
+            fetch(`/clientes/endereco/${enderecoId}/principal/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Recarregar dados
+                    const clienteId = document.getElementById('edit-cliente-id').value;
+                    document.querySelector(`[data-cliente-id="${clienteId}"].btn-editar-cliente`).click();
+                } else {
+                    alert('Erro ao definir endereço como principal: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao definir endereço como principal.');
+            });
+        }
+    });
+    
+    // Excluir endereço no modal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-excluir-endereco-modal')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-excluir-endereco-modal');
+            const enderecoId = btn.dataset.enderecoId;
+            const enderecoNome = btn.dataset.enderecoNome;
+            
+            if (confirm(`Tem certeza que deseja excluir o endereço "${enderecoNome}"?`)) {
+                fetch(`/clientes/endereco/${enderecoId}/excluir/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recarregar dados
+                        const clienteId = document.getElementById('edit-cliente-id').value;
+                        document.querySelector(`[data-cliente-id="${clienteId}"].btn-editar-cliente`).click();
+                    } else {
+                        alert('Erro ao excluir endereço: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao excluir endereço.');
+                });
+            }
+        }
+    });
+    
+    // Botão Ver Detalhes
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-detalhes')) {
+            e.preventDefault();
+            const clienteId = e.target.closest('.btn-detalhes').dataset.clienteId;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('modalDetalhesCliente'));
+            modal.show();
+            
+            // Mostrar loading
+            document.getElementById('detalhes-loading').style.display = 'block';
+            document.getElementById('detalhes-content').style.display = 'none';
+            
+            // Carregar detalhes via AJAX
+            fetch(`/clientes/${clienteId}/detalhes/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('detalhes-loading').style.display = 'none';
+                    document.getElementById('detalhes-content').style.display = 'block';
+                    
+                    document.getElementById('detalhes-content').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-user me-2"></i>Informações Pessoais</h6>
+                                <table class="table table-sm">
+                                    <tr><td><strong>Nome:</strong></td><td>${data.nome}</td></tr>
+                                    <tr><td><strong>Telefone:</strong></td><td><a href="tel:${data.telefone}">${data.telefone}</a></td></tr>
+                                    <tr><td><strong>E-mail:</strong></td><td>${data.email ? `<a href="mailto:${data.email}">${data.email}</a>` : '-'}</td></tr>
+                                    <tr><td><strong>Nascimento:</strong></td><td>${data.data_nascimento || '-'}</td></tr>
+                                    <tr><td><strong>Cadastro:</strong></td><td>${data.data_cadastro}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-chart-line me-2"></i>Estatísticas</h6>
+                                <table class="table table-sm">
+                                    <tr><td><strong>Total de Pedidos:</strong></td><td><span class="badge bg-info">${data.stats.total_pedidos}</span></td></tr>
+                                    <tr><td><strong>Total Gasto:</strong></td><td><strong class="text-success">${data.stats.total_gasto}</strong></td></tr>
+                                    <tr><td><strong>Ticket Médio:</strong></td><td><strong class="text-primary">${data.stats.ticket_medio}</strong></td></tr>
+                                    <tr><td><strong>Último Pedido:</strong></td><td>${data.stats.ultimo_pedido}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        ${data.observacoes ? `<div class="mt-3"><h6><i class="fas fa-comment me-2"></i>Observações</h6><p class="border rounded p-2 bg-light">${data.observacoes}</p></div>` : ''}
+                        
+                        <div class="mt-3">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Endereço Principal</h6>
+                            <p class="border rounded p-2 bg-light">${data.endereco_principal}</p>
+                        </div>
+                        
+                        ${data.enderecos.length > 1 ? `
+                            <div class="mt-3">
+                                <h6><i class="fas fa-map-marked-alt me-2"></i>Todos os Endereços</h6>
+                                ${data.enderecos.map(endereco => `<p class="border rounded p-2 bg-light mb-1"><strong>${endereco.nome}:</strong> ${endereco.endereco}</p>`).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${data.pedidos_recentes.length > 0 ? `
+                            <div class="mt-3">
+                                <h6><i class="fas fa-shopping-cart me-2"></i>Pedidos Recentes</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Pedido</th>
+                                                <th>Data</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.pedidos_recentes.map(pedido => `
+                                                <tr>
+                                                    <td>#${pedido.id}</td>
+                                                    <td>${pedido.data}</td>
+                                                    <td><strong>${pedido.total}</strong></td>
+                                                    <td>${pedido.status}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ` : ''}
+                    `;
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar detalhes:', error);
+                    document.getElementById('detalhes-loading').style.display = 'none';
+                    document.getElementById('detalhes-content').style.display = 'block';
+                    document.getElementById('detalhes-content').innerHTML = '<p class="text-danger">Erro ao carregar detalhes do cliente.</p>';
+                });
+        }
+    });
+    
+    // Botão Excluir
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-excluir')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-excluir');
+            const clienteId = btn.dataset.clienteId;
+            const clienteNome = btn.dataset.clienteNome;
+            
+            if (confirm(`Tem certeza que deseja excluir o cliente "${clienteNome}"?`)) {
+                fetch(`/clientes/${clienteId}/excluir/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao excluir cliente: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao excluir cliente.');
+                });
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.btn-xs {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+.text-orange {
+    color: #ff6b35 !important;
+}
+
+.btn-orange {
+    background-color: #ff6b35;
+    border-color: #ff6b35;
+    color: white;
+}
+
+.btn-orange:hover {
+    background-color: #e55a2e;
+    border-color: #e55a2e;
+    color: white;
+}
+</style>
+{% endblock %}

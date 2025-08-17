@@ -66,7 +66,7 @@
             <a class="nav-link {% if request.resolver_match.view_name == 'lista_categorias' %}active{% endif %}" href="{% url 'lista_categorias' %}"><i class="fas fa-tags"></i>Categorias</a>
             <a class="nav-link {% if request.resolver_match.view_name == 'lista_ingredientes' %}active{% endif %}" href="{% url 'lista_ingredientes' %}"><i class="fas fa-seedling"></i>Ingredientes</a>
             <a class="nav-link {% if request.resolver_match.view_name == 'lista_pedidos' %}active{% endif %}" href="{% url 'lista_pedidos' %}"><i class="fas fa-shopping-cart"></i>Pedidos</a>
-            <a class="nav-link" href="#"><i class="fas fa-users"></i>Clientes</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'lista_clientes' or 'cliente' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'lista_clientes' %}"><i class="fas fa-users"></i>Clientes</a>
             <a class="nav-link" href="#"><i class="fas fa-cubes"></i>Estoque</a>
             <a class="nav-link" href="#"><i class="fas fa-chart-line"></i>Financeiro</a>
             <a class="nav-link" href="#"><i class="fas fa-cog"></i>Configurações</a>

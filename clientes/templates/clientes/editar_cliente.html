@@ -1,0 +1,268 @@
+{% extends "autenticacao/pizzaria_dashboard.html" %}
+
+{% block title %}Editar Cliente{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-edit text-orange me-3"></i>Editar Cliente</h2>
+    <a href="{% url 'lista_clientes' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<div class="row">
+    <!-- Formulário do Cliente -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Informações do Cliente
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">{{ form.nome.label }}</label>
+                            {{ form.nome }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.telefone.label }}</label>
+                            {{ form.telefone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.data_nascimento.label }}</label>
+                            {{ form.data_nascimento }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ form.observacoes.label }}</label>
+                            {{ form.observacoes }}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-orange">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                        <a href="{% url 'lista_clientes' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas do Cliente -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Estatísticas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="text-center p-2 border rounded">
+                            <div class="h5 mb-0 text-primary">{{ cliente.total_pedidos }}</div>
+                            <small class="text-muted">Pedidos</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-2 border rounded">
+                            <div class="h5 mb-0 text-success">R$ {{ cliente.total_gasto|floatformat:2 }}</div>
+                            <small class="text-muted">Total Gasto</small>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <div class="text-center p-2 border rounded">
+                            <div class="h6 mb-0 text-info">R$ {{ cliente.ticket_medio|floatformat:2 }}</div>
+                            <small class="text-muted">Ticket Médio</small>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if cliente.ultimo_pedido %}
+                    <div class="mt-3 p-2 bg-light rounded">
+                        <small class="text-muted">Último pedido:</small>
+                        <br><strong>{{ cliente.ultimo_pedido.data_criacao|date:"d/m/Y" }}</strong>
+                        <br><span class="text-success">R$ {{ cliente.ultimo_pedido.total|floatformat:2 }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-2">
+                    <strong>Cadastrado em:</strong><br>
+                    {{ cliente.data_cadastro|date:"d/m/Y à\s H:i" }}
+                </p>
+                <p class="small mb-0">
+                    <strong>Última atualização:</strong><br>
+                    {{ cliente.data_atualizacao|date:"d/m/Y à\s H:i" }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Endereços -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>Endereços
+                </h5>
+                <a href="{% url 'adicionar_endereco' cliente.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-plus me-1"></i>Adicionar Endereço
+                </a>
+            </div>
+            <div class="card-body">
+                {% if enderecos %}
+                    <div class="row g-3">
+                        {% for endereco in enderecos %}
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 {% if endereco == cliente.endereco_principal %}border-primary bg-light{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">
+                                            {{ endereco.nome }}
+                                            {% if endereco == cliente.endereco_principal %}
+                                                <span class="badge bg-primary ms-1">Principal</span>
+                                            {% endif %}
+                                        </h6>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="{% url 'editar_endereco' endereco.id %}">
+                                                    <i class="fas fa-edit me-2"></i>Editar
+                                                </a></li>
+                                                {% if endereco != cliente.endereco_principal %}
+                                                    <li><a class="dropdown-item btn-definir-principal" href="#" data-endereco-id="{{ endereco.id }}">
+                                                        <i class="fas fa-star me-2"></i>Definir como Principal
+                                                    </a></li>
+                                                {% endif %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger btn-excluir-endereco" href="#" data-endereco-id="{{ endereco.id }}" data-endereco-nome="{{ endereco.nome }}">
+                                                    <i class="fas fa-trash me-2"></i>Excluir
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <p class="mb-0 small text-muted">{{ endereco.endereco_completo }}</p>
+                                    {% if endereco.referencia %}
+                                        <p class="mb-0 small text-info mt-1">
+                                            <i class="fas fa-info-circle me-1"></i>{{ endereco.referencia }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                        <p>Nenhum endereço cadastrado</p>
+                        <a href="{% url 'adicionar_endereco' cliente.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Adicionar Primeiro Endereço
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Definir endereço como principal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-definir-principal')) {
+            e.preventDefault();
+            const enderecoId = e.target.closest('.btn-definir-principal').dataset.enderecoId;
+            
+            fetch(`/clientes/endereco/${enderecoId}/principal/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao definir endereço como principal: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao definir endereço como principal.');
+            });
+        }
+    });
+    
+    // Excluir endereço
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-excluir-endereco')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-excluir-endereco');
+            const enderecoId = btn.dataset.enderecoId;
+            const enderecoNome = btn.dataset.enderecoNome;
+            
+            if (confirm(`Tem certeza que deseja excluir o endereço "${enderecoNome}"?`)) {
+                fetch(`/clientes/endereco/${enderecoId}/excluir/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro ao excluir endereço: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao excluir endereço.');
+                });
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.text-orange {
+    color: #ff6b35 !important;
+}
+
+.btn-orange {
+    background-color: #ff6b35;
+    border-color: #ff6b35;
+    color: white;
+}
+
+.btn-orange:hover {
+    background-color: #e55a2e;
+    border-color: #e55a2e;
+    color: white;
+}
+</style>
+{% endblock %}

@@ -119,13 +119,55 @@
         </div>
         <div class="modal-body">
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Cliente (opcional)</label>
-              <input type="text" class="form-control" name="cliente_nome" placeholder="Nome do cliente">
+            <div class="col-12">
+                <label class="form-label">Cliente</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="busca-cliente" placeholder="Digite nome ou telefone para buscar cliente..." autocomplete="off">
+                    <button type="button" class="btn btn-outline-secondary" id="btn-cliente-novo">
+                        <i class="fas fa-user-plus"></i> Novo
+                    </button>
+                </div>
+                <div id="lista-clientes" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Telefone</label>
-              <input type="text" class="form-control" name="cliente_telefone" placeholder="(xx) xxxxx-xxxx">
+            
+            <!-- Cliente selecionado (hidden) -->
+            <input type="hidden" id="cliente-selecionado-id" name="cliente_id">
+            
+            <!-- Campos para cliente não cadastrado -->
+            <div id="campos-cliente-novo" class="col-12" style="display: none;">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nome do Cliente</label>
+                        <input type="text" class="form-control" name="cliente_nome" placeholder="Nome do cliente">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" class="form-control" name="cliente_telefone" placeholder="(11) 99999-9999">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informações do cliente selecionado -->
+            <div id="cliente-selecionado-info" class="col-12" style="display: none;">
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1" id="cliente-nome"></h6>
+                            <small class="text-muted">
+                                <i class="fas fa-phone me-1"></i><span id="cliente-telefone"></span>
+                                <span id="cliente-stats" class="ms-3"></span>
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btn-remover-cliente">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="cliente-endereco" class="mt-2" style="display: none;">
+                        <small class="text-muted">
+                            <i class="fas fa-map-marker-alt me-1"></i><span id="endereco-texto"></span>
+                        </small>
+                    </div>
+                </div>
             </div>
           </div>
 
@@ -248,13 +290,55 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Cliente (opcional)</label>
-                            <input type="text" class="form-control" id="edit-cliente-nome" name="cliente_nome" placeholder="Nome do cliente">
+                        <div class="col-12">
+                            <label class="form-label">Cliente</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="edit-busca-cliente" placeholder="Digite nome ou telefone para buscar cliente..." autocomplete="off">
+                                <button type="button" class="btn btn-outline-secondary" id="edit-btn-cliente-novo">
+                                    <i class="fas fa-user-plus"></i> Novo
+                                </button>
+                            </div>
+                            <div id="edit-lista-clientes" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Telefone</label>
-                            <input type="text" class="form-control" id="edit-cliente-telefone" name="cliente_telefone" placeholder="(xx) xxxxx-xxxx">
+                        
+                        <!-- Cliente selecionado (hidden) -->
+                        <input type="hidden" id="edit-cliente-selecionado-id" name="cliente_id">
+                        
+                        <!-- Campos para cliente não cadastrado -->
+                        <div id="edit-campos-cliente-novo" class="col-12" style="display: none;">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nome do Cliente</label>
+                                    <input type="text" class="form-control" id="edit-cliente-nome" name="cliente_nome" placeholder="Nome do cliente">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Telefone</label>
+                                    <input type="text" class="form-control" id="edit-cliente-telefone" name="cliente_telefone" placeholder="(11) 99999-9999">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações do cliente selecionado -->
+                        <div id="edit-cliente-selecionado-info" class="col-12" style="display: none;">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1" id="edit-cliente-nome-display"></h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-phone me-1"></i><span id="edit-cliente-telefone-display"></span>
+                                            <span id="edit-cliente-stats" class="ms-3"></span>
+                                        </small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="edit-btn-remover-cliente">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div id="edit-cliente-endereco" class="mt-2" style="display: none;">
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i><span id="edit-endereco-texto"></span>
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -367,6 +451,228 @@ document.addEventListener('DOMContentLoaded', function() {
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+  
+  // ==================== INTEGRAÇÃO COM CLIENTES ====================
+  let clienteTimeout;
+  const buscaClienteInput = document.getElementById('busca-cliente');
+  const listaClientes = document.getElementById('lista-clientes');
+  const clienteSelecionadoId = document.getElementById('cliente-selecionado-id');
+  const clienteSelecionadoInfo = document.getElementById('cliente-selecionado-info');
+  const camposClienteNovo = document.getElementById('campos-cliente-novo');
+  
+  // Busca de clientes
+  if (buscaClienteInput) {
+    buscaClienteInput.addEventListener('input', function() {
+      const termo = this.value.trim();
+      
+      clearTimeout(clienteTimeout);
+      
+      if (termo.length < 2) {
+        listaClientes.style.display = 'none';
+        return;
+      }
+      
+      clienteTimeout = setTimeout(() => {
+        fetch(`/clientes/buscar/?termo=${encodeURIComponent(termo)}`)
+          .then(response => response.json())
+          .then(data => {
+            listaClientes.innerHTML = '';
+            
+            if (data.clientes.length > 0) {
+              data.clientes.forEach(cliente => {
+                const div = document.createElement('div');
+                div.className = 'p-2 border-bottom cliente-item';
+                div.style.cursor = 'pointer';
+                div.innerHTML = `
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <strong>${cliente.nome}</strong>
+                      <br><small class="text-muted">${cliente.telefone}</small>
+                    </div>
+                    <div class="text-end">
+                      <small class="text-success">${cliente.total_pedidos} pedidos</small>
+                      <br><small class="text-primary">R$ ${cliente.total_gasto.toFixed(2)}</small>
+                    </div>
+                  </div>
+                  ${cliente.endereco_principal ? `<small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>${cliente.endereco_principal}</small>` : ''}
+                `;
+                
+                div.addEventListener('click', () => selecionarCliente(cliente));
+                listaClientes.appendChild(div);
+              });
+              
+              listaClientes.style.display = 'block';
+            } else {
+              listaClientes.innerHTML = '<div class="p-2 text-muted">Nenhum cliente encontrado</div>';
+              listaClientes.style.display = 'block';
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao buscar clientes:', error);
+            listaClientes.style.display = 'none';
+          });
+      }, 300);
+    });
+    
+    // Esconder lista ao clicar fora
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#busca-cliente') && !e.target.closest('#lista-clientes')) {
+        listaClientes.style.display = 'none';
+      }
+    });
+  }
+  
+  // Função para selecionar cliente
+  function selecionarCliente(cliente) {
+    clienteSelecionadoId.value = cliente.id;
+    buscaClienteInput.value = '';
+    listaClientes.style.display = 'none';
+    
+    // Mostrar informações do cliente
+    document.getElementById('cliente-nome').textContent = cliente.nome;
+    document.getElementById('cliente-telefone').textContent = cliente.telefone;
+    document.getElementById('cliente-stats').textContent = `${cliente.total_pedidos} pedidos • R$ ${cliente.total_gasto.toFixed(2)} gastos`;
+    
+    if (cliente.endereco_principal) {
+      document.getElementById('endereco-texto').textContent = cliente.endereco_principal;
+      document.getElementById('cliente-endereco').style.display = 'block';
+    } else {
+      document.getElementById('cliente-endereco').style.display = 'none';
+    }
+    
+    clienteSelecionadoInfo.style.display = 'block';
+    camposClienteNovo.style.display = 'none';
+  }
+  
+  // Botão "Novo Cliente"
+  document.getElementById('btn-cliente-novo')?.addEventListener('click', function() {
+    clienteSelecionadoId.value = '';
+    buscaClienteInput.value = '';
+    listaClientes.style.display = 'none';
+    clienteSelecionadoInfo.style.display = 'none';
+    camposClienteNovo.style.display = 'block';
+  });
+  
+  // Botão "Remover Cliente"
+  document.getElementById('btn-remover-cliente')?.addEventListener('click', function() {
+    clienteSelecionadoId.value = '';
+    buscaClienteInput.value = '';
+    clienteSelecionadoInfo.style.display = 'none';
+    camposClienteNovo.style.display = 'none';
+  });
+  
+  // ==================== INTEGRAÇÃO COM CLIENTES - MODAL EDITAR ====================
+  let editClienteTimeout;
+  const editBuscaClienteInput = document.getElementById('edit-busca-cliente');
+  const editListaClientes = document.getElementById('edit-lista-clientes');
+  const editClienteSelecionadoId = document.getElementById('edit-cliente-selecionado-id');
+  const editClienteSelecionadoInfo = document.getElementById('edit-cliente-selecionado-info');
+  const editCamposClienteNovo = document.getElementById('edit-campos-cliente-novo');
+  
+  // Busca de clientes no modal de editar
+  if (editBuscaClienteInput) {
+    editBuscaClienteInput.addEventListener('input', function() {
+      const termo = this.value.trim();
+      
+      clearTimeout(editClienteTimeout);
+      
+      if (termo.length < 2) {
+        editListaClientes.style.display = 'none';
+        return;
+      }
+      
+      editClienteTimeout = setTimeout(() => {
+        fetch(`/clientes/buscar/?termo=${encodeURIComponent(termo)}`)
+          .then(response => response.json())
+          .then(data => {
+            editListaClientes.innerHTML = '';
+            
+            if (data.clientes.length > 0) {
+              data.clientes.forEach(cliente => {
+                const div = document.createElement('div');
+                div.className = 'p-2 border-bottom cliente-item';
+                div.style.cursor = 'pointer';
+                div.innerHTML = `
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <strong>${cliente.nome}</strong>
+                      <br><small class="text-muted">${cliente.telefone}</small>
+                    </div>
+                    <div class="text-end">
+                      <small class="text-success">${cliente.total_pedidos} pedidos</small>
+                      <br><small class="text-primary">R$ ${cliente.total_gasto.toFixed(2)}</small>
+                    </div>
+                  </div>
+                  ${cliente.endereco_principal ? `<small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>${cliente.endereco_principal}</small>` : ''}
+                `;
+                
+                div.addEventListener('click', () => editSelecionarCliente(cliente));
+                editListaClientes.appendChild(div);
+              });
+              
+              editListaClientes.style.display = 'block';
+            } else {
+              editListaClientes.innerHTML = '<div class="p-2 text-muted">Nenhum cliente encontrado</div>';
+              editListaClientes.style.display = 'block';
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao buscar clientes:', error);
+            editListaClientes.style.display = 'none';
+          });
+      }, 300);
+    });
+    
+    // Esconder lista ao clicar fora
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#edit-busca-cliente') && !e.target.closest('#edit-lista-clientes')) {
+        editListaClientes.style.display = 'none';
+      }
+    });
+  }
+  
+  // Função para selecionar cliente no modal de editar
+  function editSelecionarCliente(cliente) {
+    editClienteSelecionadoId.value = cliente.id;
+    editBuscaClienteInput.value = '';
+    editListaClientes.style.display = 'none';
+    
+    // Mostrar informações do cliente
+    document.getElementById('edit-cliente-nome-display').textContent = cliente.nome;
+    document.getElementById('edit-cliente-telefone-display').textContent = cliente.telefone;
+    document.getElementById('edit-cliente-stats').textContent = `${cliente.total_pedidos} pedidos • R$ ${cliente.total_gasto.toFixed(2)} gastos`;
+    
+    if (cliente.endereco_principal) {
+      document.getElementById('edit-endereco-texto').textContent = cliente.endereco_principal;
+      document.getElementById('edit-cliente-endereco').style.display = 'block';
+    } else {
+      document.getElementById('edit-cliente-endereco').style.display = 'none';
+    }
+    
+    editClienteSelecionadoInfo.style.display = 'block';
+    editCamposClienteNovo.style.display = 'none';
+    
+    // Limpar campos de cliente novo
+    document.getElementById('edit-cliente-nome').value = '';
+    document.getElementById('edit-cliente-telefone').value = '';
+  }
+  
+  // Botão "Novo Cliente" no modal de editar
+  document.getElementById('edit-btn-cliente-novo')?.addEventListener('click', function() {
+    editClienteSelecionadoId.value = '';
+    editBuscaClienteInput.value = '';
+    editListaClientes.style.display = 'none';
+    editClienteSelecionadoInfo.style.display = 'none';
+    editCamposClienteNovo.style.display = 'block';
+  });
+  
+  // Botão "Remover Cliente" no modal de editar
+  document.getElementById('edit-btn-remover-cliente')?.addEventListener('click', function() {
+    editClienteSelecionadoId.value = '';
+    editBuscaClienteInput.value = '';
+    editClienteSelecionadoInfo.style.display = 'none';
+    editCamposClienteNovo.style.display = 'none';
   });
 });
 
@@ -546,10 +852,27 @@ document.addEventListener('click', function(e) {
         
         // Preencher dados básicos
         document.getElementById('edit-pedido-id').textContent = data.id;
-        document.getElementById('edit-cliente-nome').value = data.cliente_nome;
-        document.getElementById('edit-cliente-telefone').value = data.cliente_telefone;
         document.getElementById('edit-forma-pagamento').value = data.forma_pagamento;
         document.getElementById('edit-observacoes').value = data.observacoes;
+        
+        // Configurar cliente
+        if (data.cliente_id) {
+          // Cliente cadastrado - simular seleção
+          const clienteInfo = {
+            id: data.cliente_id,
+            nome: data.cliente_nome,
+            telefone: data.cliente_telefone,
+            endereco_principal: data.cliente_endereco || '',
+            total_pedidos: data.cliente_total_pedidos || 0,
+            total_gasto: data.cliente_total_gasto || 0
+          };
+          editSelecionarCliente(clienteInfo);
+        } else {
+          // Cliente não cadastrado - mostrar campos manuais
+          document.getElementById('edit-cliente-nome').value = data.cliente_nome || '';
+          document.getElementById('edit-cliente-telefone').value = data.cliente_telefone || '';
+          document.getElementById('edit-btn-cliente-novo').click(); // Ativa modo "novo cliente"
+        }
         
         // Guardar produtos disponíveis
         editProdutos = data.produtos_disponiveis;

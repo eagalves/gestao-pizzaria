@@ -13,6 +13,7 @@ def lista_pedidos(request):
 
     if request.method == "POST":
         # Criação do pedido
+        cliente_id = request.POST.get("cliente_id", "")
         cliente_nome = request.POST.get("cliente_nome", "")
         cliente_telefone = request.POST.get("cliente_telefone", "")
         forma_pagamento = request.POST.get("forma_pagamento")
@@ -22,10 +23,20 @@ def lista_pedidos(request):
             messages.error(request, "Forma de pagamento é obrigatória.")
             return redirect("lista_pedidos")
 
+        # Buscar cliente se foi selecionado
+        cliente = None
+        if cliente_id:
+            try:
+                from clientes.models import Cliente
+                cliente = Cliente.objects.get(id=cliente_id, pizzaria=pizzaria)
+            except Cliente.DoesNotExist:
+                cliente = None
+
         pedido = Pedido.objects.create(
             pizzaria=pizzaria,
-            cliente_nome=cliente_nome,
-            cliente_telefone=cliente_telefone,
+            cliente=cliente,
+            cliente_nome=cliente_nome if not cliente else "",
+            cliente_telefone=cliente_telefone if not cliente else "",
             forma_pagamento=forma_pagamento,
             observacoes=observacoes,
             status="RECEBIDO",
@@ -185,8 +196,23 @@ def editar_pedido(request, pedido_id):
     if request.method == "POST":
         try:
             # Atualizar dados básicos do pedido
-            pedido.cliente_nome = request.POST.get("cliente_nome", "")
-            pedido.cliente_telefone = request.POST.get("cliente_telefone", "")
+            cliente_id = request.POST.get("cliente_id", "")
+            cliente_nome = request.POST.get("cliente_nome", "")
+            cliente_telefone = request.POST.get("cliente_telefone", "")
+            
+            # Buscar cliente se foi selecionado
+            cliente = None
+            if cliente_id:
+                try:
+                    from clientes.models import Cliente
+                    cliente = Cliente.objects.get(id=cliente_id, pizzaria=pizzaria)
+                except Cliente.DoesNotExist:
+                    cliente = None
+            
+            # Atualizar pedido
+            pedido.cliente = cliente
+            pedido.cliente_nome = cliente_nome if not cliente else ""
+            pedido.cliente_telefone = cliente_telefone if not cliente else ""
             pedido.forma_pagamento = request.POST.get("forma_pagamento")
             pedido.observacoes = request.POST.get("observacoes", "")
             
@@ -250,14 +276,33 @@ def editar_pedido(request, pedido_id):
             'preco': float(produto.preco_atual)
         })
     
+    # Informações do cliente
+    if pedido.cliente:
+        cliente_info = {
+            'cliente_id': pedido.cliente.id,
+            'cliente_nome': pedido.cliente.nome,
+            'cliente_telefone': pedido.cliente.telefone,
+            'cliente_endereco': pedido.cliente.endereco_principal.endereco_completo() if pedido.cliente.endereco_principal else '',
+            'cliente_total_pedidos': pedido.cliente.total_pedidos(),
+            'cliente_total_gasto': pedido.cliente.total_gasto(),
+        }
+    else:
+        cliente_info = {
+            'cliente_id': None,
+            'cliente_nome': pedido.cliente_nome or '',
+            'cliente_telefone': pedido.cliente_telefone or '',
+            'cliente_endereco': '',
+            'cliente_total_pedidos': 0,
+            'cliente_total_gasto': 0,
+        }
+
     dados = {
         'id': pedido.id,
-        'cliente_nome': pedido.cliente_nome or '',
-        'cliente_telefone': pedido.cliente_telefone or '',
         'forma_pagamento': pedido.forma_pagamento,
         'observacoes': pedido.observacoes or '',
         'itens': itens,
-        'produtos_disponiveis': produtos_disponiveis
+        'produtos_disponiveis': produtos_disponiveis,
+        **cliente_info
     }
     
     return JsonResponse(dados)
