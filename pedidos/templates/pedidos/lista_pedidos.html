@@ -547,11 +547,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Botão "Novo Cliente"
   document.getElementById('btn-cliente-novo')?.addEventListener('click', function() {
-    clienteSelecionadoId.value = '';
-    buscaClienteInput.value = '';
-    listaClientes.style.display = 'none';
-    clienteSelecionadoInfo.style.display = 'none';
-    camposClienteNovo.style.display = 'block';
+    // Abrir modal de novo cliente
+    const modal = new bootstrap.Modal(document.getElementById('modalNovoClientePedido'));
+    modal.show();
   });
   
   // Botão "Remover Cliente"
@@ -660,11 +658,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Botão "Novo Cliente" no modal de editar
   document.getElementById('edit-btn-cliente-novo')?.addEventListener('click', function() {
-    editClienteSelecionadoId.value = '';
-    editBuscaClienteInput.value = '';
-    editListaClientes.style.display = 'none';
-    editClienteSelecionadoInfo.style.display = 'none';
-    editCamposClienteNovo.style.display = 'block';
+    // Abrir modal de novo cliente
+    const modal = new bootstrap.Modal(document.getElementById('modalNovoClientePedido'));
+    modal.show();
   });
   
   // Botão "Remover Cliente" no modal de editar
@@ -674,6 +670,133 @@ document.addEventListener('DOMContentLoaded', function() {
     editClienteSelecionadoInfo.style.display = 'none';
     editCamposClienteNovo.style.display = 'none';
   });
+  
+  // ==================== MODAL NOVO CLIENTE PEDIDO ====================
+  
+  // Checkbox para mostrar/esconder campos de endereço
+  const incluirEnderecoCheckboxPedido = document.getElementById('incluir-endereco-pedido');
+  const camposEnderecoPedido = document.getElementById('campos-endereco-pedido');
+  
+  if (incluirEnderecoCheckboxPedido) {
+    incluirEnderecoCheckboxPedido.addEventListener('change', function() {
+      camposEnderecoPedido.style.display = this.checked ? 'block' : 'none';
+    });
+  }
+  
+  // Buscar CEP
+  const btnBuscarCepPedido = document.getElementById('btn-buscar-cep-pedido');
+  if (btnBuscarCepPedido) {
+    btnBuscarCepPedido.addEventListener('click', function() {
+      const cepInput = document.getElementById('cep-pedido');
+      const cep = cepInput.value.replace(/\D/g, '');
+      
+      if (cep.length !== 8) {
+        alert('CEP deve ter 8 dígitos');
+        return;
+      }
+      
+      const btn = this;
+      const originalContent = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      btn.disabled = true;
+      
+      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.erro) {
+            alert('CEP não encontrado');
+          } else {
+            document.getElementById('rua-pedido').value = data.logradouro || '';
+            document.getElementById('bairro-pedido').value = data.bairro || '';
+            document.getElementById('cidade-pedido').value = data.localidade || '';
+            document.getElementById('estado-pedido').value = data.uf || '';
+            
+            // Foca no campo número
+            document.getElementById('numero-pedido').focus();
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao buscar CEP:', error);
+          alert('Erro ao buscar CEP');
+        })
+        .finally(() => {
+          btn.innerHTML = originalContent;
+          btn.disabled = false;
+        });
+    });
+  }
+  
+  // Submissão do formulário de novo cliente
+  const formNovoClientePedido = document.getElementById('formNovoClientePedido');
+  if (formNovoClientePedido) {
+    formNovoClientePedido.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalBtnContent = submitBtn.innerHTML;
+      
+      // Mostrar loading
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvando...';
+      submitBtn.disabled = true;
+      
+      // Enviar dados via AJAX
+      fetch('/clientes/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          // Status 200-299 = sucesso
+          return response.json().then(data => ({ success: true, data }));
+        } else {
+          // Status 400+ = erro
+          return response.json().then(data => ({ success: false, data }));
+        }
+      })
+      .then(result => {
+        if (result.success) {
+          // Sucesso - fechar modal e buscar o cliente recém-criado
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovoClientePedido'));
+          modal.hide();
+          
+          // Limpar formulário
+          formNovoClientePedido.reset();
+          camposEnderecoPedido.style.display = 'none';
+          incluirEnderecoCheckboxPedido.checked = false;
+          
+          // Buscar o cliente recém-criado pelo nome
+          const nomeCliente = formData.get('nome');
+          if (nomeCliente && buscaClienteInput) {
+            // Simular busca para encontrar o cliente
+            setTimeout(() => {
+              buscaClienteInput.value = nomeCliente;
+              buscaClienteInput.dispatchEvent(new Event('input'));
+            }, 500);
+          }
+          
+          alert(result.data.message || 'Cliente cadastrado com sucesso!');
+        } else {
+          // Erro - mostrar mensagem
+          console.error('Erro do servidor:', result.data);
+          alert(result.data.message || 'Erro ao cadastrar cliente. Verifique os dados e tente novamente.');
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao cadastrar cliente. Tente novamente.');
+      })
+      .finally(() => {
+        // Restaurar botão
+        submitBtn.innerHTML = originalBtnContent;
+        submitBtn.disabled = false;
+      });
+    });
+  }
 });
 
 // Função para alterar status do pedido
@@ -1128,4 +1251,140 @@ document.getElementById('formEditarPedido').addEventListener('submit', function(
   width: 140px;
 }
 </style>
+
+<!-- Modal Novo Cliente -->
+<div class="modal fade" id="modalNovoClientePedido" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formNovoClientePedido">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus text-orange me-2"></i>Novo Cliente
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dados do Cliente -->
+                    <h6><i class="fas fa-user me-2"></i>Dados do Cliente</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" name="nome" placeholder="Nome completo do cliente" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control" name="telefone" placeholder="(11) 99999-9999" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-control" name="email" placeholder="cliente@email.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Data de Nascimento</label>
+                            <input type="date" class="form-control" name="data_nascimento">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" name="observacoes" rows="2" placeholder="Observações sobre o cliente (opcional)"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço (Opcional) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6><i class="fas fa-map-marker-alt me-2"></i>Endereço (Opcional)</h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="incluir-endereco-pedido">
+                            <label class="form-check-label" for="incluir-endereco-pedido">
+                                Cadastrar endereço
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="campos-endereco-pedido" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome do Endereço</label>
+                                <input type="text" class="form-control" name="endereco_nome" placeholder="Ex: Casa, Trabalho">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">CEP</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="endereco_cep" placeholder="12345-678" maxlength="10" id="cep-pedido">
+                                    <button type="button" class="btn btn-outline-secondary" id="btn-buscar-cep-pedido">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Rua/Avenida</label>
+                                <input type="text" class="form-control" name="endereco_rua" placeholder="Nome da rua" id="rua-pedido">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Número</label>
+                                <input type="text" class="form-control" name="endereco_numero" placeholder="123" id="numero-pedido">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Complemento</label>
+                                <input type="text" class="form-control" name="endereco_complemento" placeholder="Apto, Bloco, etc. (opcional)" id="complemento-pedido">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bairro</label>
+                                <input type="text" class="form-control" name="endereco_bairro" placeholder="Nome do bairro" id="bairro-pedido">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" class="form-control" name="endereco_cidade" placeholder="Nome da cidade" id="cidade-pedido">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Estado</label>
+                                <select class="form-control" name="endereco_estado" id="estado-pedido">
+                                    <option value="">---</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Referência</label>
+                                <input type="text" class="form-control" name="endereco_referencia" placeholder="Ponto de referência (opcional)" id="referencia-pedido">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-orange">
+                        <i class="fas fa-save me-2"></i>Salvar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

@@ -76,9 +76,29 @@ def lista_clientes(request):
             else:
                 messages.success(request, f'Cliente "{cliente.nome}" cadastrado com sucesso!')
             
+            # Se for requisição AJAX, retornar JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Cliente "{cliente.nome}" cadastrado com sucesso!',
+                    'cliente': {
+                        'id': cliente.id,
+                        'nome': cliente.nome,
+                        'telefone': cliente.telefone
+                    }
+                })
+            
             return redirect('lista_clientes')
         else:
             messages.error(request, 'Erro ao cadastrar cliente. Verifique os dados.')
+            
+            # Se for requisição AJAX, retornar JSON com erro
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Erro ao cadastrar cliente. Verifique os dados.',
+                    'errors': form.errors
+                }, status=400)
     else:
         form = ClienteForm(pizzaria=pizzaria)
     
