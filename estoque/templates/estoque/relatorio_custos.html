@@ -141,7 +141,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'produtos:editar_produto' item.produto.id %}" 
+                                            <a href="{% url 'editar_produto' item.produto.id %}" 
                                                class="btn btn-outline-primary" title="Editar Produto">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -222,7 +222,7 @@
                         <li>4. Definir preços de venda</li>
                     </ol>
                     <div class="mt-4">
-                        <a href="{% url 'produtos:lista_produtos' %}" class="btn btn-primary me-2">
+                        <a href="{% url 'lista_produtos' %}" class="btn btn-primary me-2">
                             <i class="fas fa-pizza-slice me-2"></i>Gerenciar Produtos
                         </a>
                         <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-success">
