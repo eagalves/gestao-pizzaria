@@ -1,0 +1,196 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Estoque - Lista{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-warehouse me-2"></i>Controle de Estoque</h2>
+                    <p class="text-muted mb-0">Gerencie o estoque de todos os ingredientes</p>
+                </div>
+                <a href="{% url 'estoque:dashboard_estoque' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row align-items-end">
+                        <div class="col-md-6">
+                            <label for="busca" class="form-label">Buscar Ingrediente</label>
+                            <input type="text" class="form-control" id="busca" name="busca" 
+                                   value="{{ busca }}" placeholder="Nome do ingrediente...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="filtro_estoque" class="form-label">Filtro</label>
+                            <select class="form-control" id="filtro_estoque" name="filtro_estoque">
+                                <option value="todos" {% if filtro_estoque == 'todos' %}selected{% endif %}>Todos os ingredientes</option>
+                                <option value="baixo" {% if filtro_estoque == 'baixo' %}selected{% endif %}>Estoque baixo</option>
+                                <option value="zerado" {% if filtro_estoque == 'zerado' %}selected{% endif %}>Estoque zerado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Estoque -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if estoques %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th>Quantidade Atual</th>
+                                        <th>Estoque Mínimo</th>
+                                        <th>Preço Unitário</th>
+                                        <th>Valor Total</th>
+                                        <th>Status</th>
+                                        <th>Última Compra</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for estoque in estoques %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ estoque.ingrediente.nome }}</strong>
+                                            {% if estoque.ingrediente.descricao %}
+                                                <br><small class="text-muted">{{ estoque.ingrediente.descricao|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ estoque.quantidade_atual }} {{ estoque.get_unidade_medida_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ estoque.estoque_minimo }} {{ estoque.get_unidade_medida_display }}</td>
+                                        <td>R$ {{ estoque.preco_compra_atual|floatformat:2 }}</td>
+                                        <td>R$ {{ estoque.valor_total_estoque|floatformat:2 }}</td>
+                                        <td>
+                                            {% if estoque.quantidade_atual == 0 %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Zerado
+                                                </span>
+                                            {% elif estoque.estoque_baixo %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Baixo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Normal
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if estoque.data_ultima_compra %}
+                                                {{ estoque.data_ultima_compra|date:"d/m/Y" }}
+                                            {% else %}
+                                                <span class="text-muted">Nunca</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'estoque:editar_estoque' estoque.id %}" 
+                                                   class="btn btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'estoque:historico_precos' estoque.ingrediente.id %}" 
+                                                   class="btn btn-outline-info" title="Histórico de Preços">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum ingrediente encontrado</h5>
+                            <p class="text-muted">
+                                {% if busca %}
+                                    Tente ajustar os filtros de busca.
+                                {% else %}
+                                    Comece registrando uma compra de ingrediente.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Registrar Primeira Compra
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    {% if estoques %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h5>{{ estoques|length }}</h5>
+                            <small class="text-muted">Total de Ingredientes</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="text-warning">
+                                {{ estoques|length }}
+                            </h5>
+                            <small class="text-muted">Estoque Baixo</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="text-danger">
+                                {{ estoques|length }}
+                            </h5>
+                            <small class="text-muted">Estoque Zerado</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="text-success">R$ 0,00</h5>
+                            <small class="text-muted">Valor Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Histórico de Preços - {{ ingrediente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-chart-line me-2"></i>Histórico de Preços</h2>
+                    <p class="text-muted mb-0">{{ ingrediente.nome }}</p>
+                </div>
+                <a href="{% url 'estoque:lista_estoque' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Estoque
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4>R$ {{ preco_medio|floatformat:2 }}</h4>
+                    <p class="mb-0">Preço Médio</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>R$ {{ preco_minimo|floatformat:2 }}</h4>
+                    <p class="mb-0">Menor Preço</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h4>R$ {{ preco_maximo|floatformat:2 }}</h4>
+                    <p class="mb-0">Maior Preço</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4>{{ historico|length }}</h4>
+                    <p class="mb-0">Registros</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Ingrediente -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle me-2"></i>Informações do Ingrediente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nome:</strong> {{ ingrediente.nome }}</p>
+                            {% if ingrediente.descricao %}
+                                <p><strong>Descrição:</strong> {{ ingrediente.descricao }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" {% if ingrediente.vegetariano %}checked{% endif %} disabled>
+                                        <label class="form-check-label">Vegetariano</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" {% if ingrediente.vegano %}checked{% endif %} disabled>
+                                        <label class="form-check-label">Vegano</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" {% if ingrediente.contem_gluten %}checked{% endif %} disabled>
+                                        <label class="form-check-label">Contém Glúten</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" {% if ingrediente.contem_lactose %}checked{% endif %} disabled>
+                                        <label class="form-check-label">Contém Lactose</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history me-2"></i>Histórico de Variações</h5>
+                </div>
+                <div class="card-body">
+                    {% if historico %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Preço</th>
+                                        <th>Fornecedor</th>
+                                        <th>Variação</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in historico %}
+                                    <tr>
+                                        <td>{{ item.data_preco|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <strong>R$ {{ item.preco|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>{{ item.fornecedor }}</td>
+                                        <td>
+                                            {% if not forloop.last %}
+                                                {% with proximo=historico|slice:forloop.counter0 %}
+                                                    {% for prox in proximo %}
+                                                        {% if forloop.first and forloop.parentloop.counter0 != forloop.parentloop.counter %}
+                                                            {% with variacao=item.preco_centavos|sub:prox.preco_centavos %}
+                                                                {% if variacao > 0 %}
+                                                                    <span class="badge bg-danger">
+                                                                        <i class="fas fa-arrow-up me-1"></i>
+                                                                        +R$ {{ variacao|floatformat:2|div:100 }}
+                                                                    </span>
+                                                                {% elif variacao < 0 %}
+                                                                    <span class="badge bg-success">
+                                                                        <i class="fas fa-arrow-down me-1"></i>
+                                                                        R$ {{ variacao|floatformat:2|div:100 }}
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">
+                                                                        <i class="fas fa-minus me-1"></i>Sem alteração
+                                                                    </span>
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-star me-1"></i>Primeiro registro
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if forloop.first %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Atual
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Histórico</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum histórico encontrado</h5>
+                            <p class="text-muted">
+                                Este ingrediente ainda não possui registros de preço.<br>
+                                Registre uma compra para começar o histórico.
+                            </p>
+                            <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>Registrar Compra
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

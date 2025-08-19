@@ -1,0 +1,199 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Dashboard - Estoque{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-warehouse me-2"></i>Dashboard do Estoque</h2>
+            <p class="text-muted">Visão geral do controle de estoque</p>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_ingredientes }}</h4>
+                            <p class="mb-0">Ingredientes</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-list fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ ingredientes_baixo_estoque }}</h4>
+                            <p class="mb-0">Estoque Baixo</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>R$ {{ valor_total_estoque|floatformat:2 }}</h4>
+                            <p class="mb-0">Valor Total</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-light btn-sm">
+                                <i class="fas fa-plus"></i> Nova Compra
+                            </a>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Últimas Compras -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-history me-2"></i>Últimas Compras</h5>
+                    <a href="{% url 'estoque:lista_compras' %}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                </div>
+                <div class="card-body">
+                    {% if ultimas_compras %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Ingrediente</th>
+                                        <th>Quantidade</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for compra in ultimas_compras %}
+                                    <tr>
+                                        <td>{{ compra.data_compra|date:"d/m/Y" }}</td>
+                                        <td>{{ compra.ingrediente.nome }}</td>
+                                        <td>{{ compra.quantidade }}</td>
+                                        <td>R$ {{ compra.valor_total|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Nenhuma compra registrada ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estoque Baixo -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Estoque Baixo</h5>
+                    <a href="{% url 'estoque:lista_estoque' %}?filtro_estoque=baixo" class="btn btn-sm btn-outline-warning">Ver todos</a>
+                </div>
+                <div class="card-body">
+                    {% if estoque_baixo %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th>Atual</th>
+                                        <th>Mínimo</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for estoque in estoque_baixo %}
+                                    <tr>
+                                        <td>{{ estoque.ingrediente.nome }}</td>
+                                        <td>{{ estoque.quantidade_atual }} {{ estoque.get_unidade_medida_display }}</td>
+                                        <td>{{ estoque.estoque_minimo }} {{ estoque.get_unidade_medida_display }}</td>
+                                        <td>
+                                            {% if estoque.quantidade_atual == 0 %}
+                                                <span class="badge bg-danger">Zerado</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Baixo</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Todos os estoques estão normais! 🎉</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu de Ações -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="fas fa-cogs me-2"></i>Ações Rápidas</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'estoque:lista_estoque' %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-list me-2"></i>Gerenciar Estoque
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="fas fa-plus me-2"></i>Registrar Compra
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'estoque:lista_fornecedores' %}" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-truck me-2"></i>Fornecedores
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'estoque:relatorio_custos' %}" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-chart-line me-2"></i>Relatório de Custos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

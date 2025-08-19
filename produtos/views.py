@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from autenticacao.models import UsuarioPizzaria
 from ingredientes.models import Ingrediente
 from .models import Produto, PrecoProduto, ProdutoIngrediente, CategoriaProduto
-from .forms import ProdutoForm, CategoriaForm
+from .forms import ProdutoForm, CategoriaForm, PrecoProdutoForm
 
 
 @login_required
@@ -24,7 +24,14 @@ def lista_produtos(request):
             produto.save()
 
             # preço base
-            PrecoProduto.objects.create(produto=produto, valor=form.cleaned_data['preco_base'])
+            preco_base = form.cleaned_data['preco_base']
+            PrecoProduto.objects.create(
+                produto=produto, 
+                preco_base_centavos=int(preco_base * 100),
+                preco_custo_centavos=0,  # Será calculado depois
+                preco_venda_centavos=int(preco_base * 100),  # Inicialmente igual ao preço base
+                data_inicio=timezone.now().date()
+            )
 
             # Processar ingredientes enviados via formulário
             for key, value in request.POST.items():
@@ -92,10 +99,20 @@ def editar_produto(request, produto_id):
             
             # Atualizar preço se mudou
             novo_preco = form.cleaned_data["preco_base"]
-            if novo_preco != produto.preco_atual:
+            preco_atual_obj = produto.preco_atual
+            preco_atual_valor = preco_atual_obj.preco_base if preco_atual_obj else 0
+            
+            if novo_preco != preco_atual_valor:
                 # Finaliza preço anterior
                 PrecoProduto.objects.filter(produto=produto, data_fim__isnull=True).update(data_fim=timezone.now())
-                PrecoProduto.objects.create(produto=produto, valor=novo_preco)
+                # Criar novo preço
+                PrecoProduto.objects.create(
+                    produto=produto, 
+                    preco_base_centavos=int(novo_preco * 100),
+                    preco_custo_centavos=0,  # Será calculado depois
+                    preco_venda_centavos=int(novo_preco * 100),  # Inicialmente igual ao preço base
+                    data_inicio=timezone.now().date()
+                )
 
             # Processar ingredientes - primeiro remover todos os existentes
             ProdutoIngrediente.objects.filter(produto=produto).delete()
@@ -298,3 +315,44 @@ def reordenar_categorias(request):
     
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+
+@login_required
+def gerenciar_precos(request, produto_id):
+    """Gerencia preços de um produto específico."""
+    pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+    produto = get_object_or_404(Produto, id=produto_id, pizzaria=pizzaria)
+    
+    # Buscar ou criar preço atual
+    preco_atual, created = PrecoProduto.objects.get_or_create(
+        produto=produto,
+        data_fim__isnull=True,
+        defaults={
+            'preco_base_centavos': 0,
+            'preco_custo_centavos': 0,
+            'preco_venda_centavos': 0,
+            'data_inicio': timezone.now().date()
+        }
+    )
+    
+    if request.method == 'POST':
+        form = PrecoProdutoForm(request.POST, instance=preco_atual)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Preços do produto "{produto.nome}" atualizados com sucesso!')
+            return redirect('lista_produtos')
+    else:
+        form = PrecoProdutoForm(instance=preco_atual)
+    
+    # Calcular informações adicionais
+    custo_ingredientes = produto.custo_ingredientes
+    
+    context = {
+        'produto': produto,
+        'form': form,
+        'preco_atual': preco_atual,
+        'custo_ingredientes': custo_ingredientes,
+        'ingredientes': produto.get_ingredientes(),
+    }
+    
+    return render(request, 'produtos/gerenciar_precos.html', context)

@@ -1,0 +1,167 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Histórico de Compras{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-history me-2"></i>Histórico de Compras</h2>
+                    <p class="text-muted mb-0">Acompanhe todas as compras de ingredientes</p>
+                </div>
+                <div>
+                    <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Nova Compra
+                    </a>
+                    <a href="{% url 'estoque:dashboard_estoque' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row align-items-end">
+                        <div class="col-md-4">
+                            <label for="busca" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="busca" name="busca" 
+                                   value="{{ busca }}" placeholder="Ingrediente ou fornecedor...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="data_inicio" class="form-label">Data Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ data_inicio }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="data_fim" class="form-label">Data Fim</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ data_fim }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    {% if total_compras > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6><i class="fas fa-calculator me-2"></i>Resumo do Período</h6>
+                    </div>
+                    <div>
+                        <strong>Total: R$ {{ total_compras|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Compras -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if compras %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Ingrediente</th>
+                                        <th>Fornecedor</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Unit.</th>
+                                        <th>Total</th>
+                                        <th>Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for compra in compras %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ compra.data_compra|date:"d/m/Y" }}</strong>
+                                            <br><small class="text-muted">{{ compra.criado_em|date:"H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ compra.ingrediente.nome }}</strong>
+                                            {% if compra.ingrediente.descricao %}
+                                                <br><small class="text-muted">{{ compra.ingrediente.descricao|truncatechars:30 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if compra.fornecedor %}
+                                                {{ compra.fornecedor.nome }}
+                                            {% else %}
+                                                <span class="text-muted">Não informado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ compra.quantidade }}
+                                            </span>
+                                        </td>
+                                        <td>R$ {{ compra.preco_unitario|floatformat:2 }}</td>
+                                        <td>
+                                            <strong>R$ {{ compra.valor_total|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if compra.numero_nota %}
+                                                <small class="text-muted">{{ compra.numero_nota }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if compra.observacoes %}
+                                    <tr class="table-light">
+                                        <td colspan="7">
+                                            <small class="text-muted">
+                                                <i class="fas fa-sticky-note me-1"></i>
+                                                {{ compra.observacoes }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhuma compra encontrada</h5>
+                            <p class="text-muted">
+                                {% if busca or data_inicio or data_fim %}
+                                    Tente ajustar os filtros de busca.
+                                {% else %}
+                                    Comece registrando sua primeira compra de ingredientes.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>Registrar Primeira Compra
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

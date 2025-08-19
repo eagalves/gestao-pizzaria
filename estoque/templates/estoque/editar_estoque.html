@@ -1,0 +1,167 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Editar Estoque - {{ estoque.ingrediente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-edit me-2"></i>Editar Estoque - {{ estoque.ingrediente.nome }}</h4>
+                    <a href="{% url 'estoque:lista_estoque' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.quantidade_atual.id_for_label }}" class="form-label">
+                                        <i class="fas fa-weight me-2"></i>Quantidade Atual *
+                                    </label>
+                                    {{ form.quantidade_atual }}
+                                    {% if form.quantidade_atual.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.quantidade_atual.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.unidade_medida.id_for_label }}" class="form-label">
+                                        <i class="fas fa-ruler me-2"></i>Unidade de Medida *
+                                    </label>
+                                    {{ form.unidade_medida }}
+                                    {% if form.unidade_medida.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.unidade_medida.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.estoque_minimo.id_for_label }}" class="form-label">
+                                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Estoque Mínimo *
+                                    </label>
+                                    {{ form.estoque_minimo }}
+                                    {% if form.estoque_minimo.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.estoque_minimo.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Quantidade que gera alerta de estoque baixo
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.estoque_maximo.id_for_label }}" class="form-label">
+                                        <i class="fas fa-check me-2 text-success"></i>Estoque Máximo
+                                    </label>
+                                    {{ form.estoque_maximo }}
+                                    {% if form.estoque_maximo.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.estoque_maximo.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Quantidade máxima recomendada (opcional)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.preco_compra_reais.id_for_label }}" class="form-label">
+                                <i class="fas fa-dollar-sign me-2"></i>Preço de Compra Atual *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.preco_compra_reais }}
+                            </div>
+                            {% if form.preco_compra_reais.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.preco_compra_reais.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Alterar este preço irá recalcular automaticamente o custo de todos os produtos que usam este ingrediente
+                            </small>
+                        </div>
+
+                        <!-- Informações do Ingrediente -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Informações do Ingrediente</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Nome:</strong> {{ estoque.ingrediente.nome }}</p>
+                                    {% if estoque.ingrediente.descricao %}
+                                        <p class="mb-1"><strong>Descrição:</strong> {{ estoque.ingrediente.descricao }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Última Compra:</strong> 
+                                        {% if estoque.data_ultima_compra %}
+                                            {{ estoque.data_ultima_compra|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted">Nunca</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-1"><strong>Valor Total em Estoque:</strong> 
+                                        R$ {{ estoque.valor_total_estoque|floatformat:2 }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status do Estoque -->
+                        <div class="alert {% if estoque.estoque_baixo %}alert-warning{% else %}alert-success{% endif %}">
+                            <h6>
+                                {% if estoque.estoque_baixo %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Status: Estoque Baixo
+                                {% else %}
+                                    <i class="fas fa-check me-2"></i>Status: Estoque Normal
+                                {% endif %}
+                            </h6>
+                            <p class="mb-0">
+                                {% if estoque.quantidade_atual == 0 %}
+                                    <strong class="text-danger">Ingrediente em falta!</strong> É necessário fazer uma compra urgente.
+                                {% elif estoque.estoque_baixo %}
+                                    <strong>Atenção:</strong> O estoque está abaixo do mínimo recomendado. Considere fazer uma nova compra.
+                                {% else %}
+                                    O estoque está em níveis adequados.
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'estoque:lista_estoque' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <div>
+                                <a href="{% url 'estoque:historico_precos' estoque.ingrediente.id %}" class="btn btn-info me-2">
+                                    <i class="fas fa-chart-line me-2"></i>Ver Histórico de Preços
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-2"></i>Salvar Alterações
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

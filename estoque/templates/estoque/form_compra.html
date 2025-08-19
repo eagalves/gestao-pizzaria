@@ -1,0 +1,244 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-shopping-cart me-2"></i>{{ titulo }}</h4>
+                    <a href="{% url 'estoque:lista_compras' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="form-compra">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.ingrediente.id_for_label }}" class="form-label">
+                                        <i class="fas fa-leaf me-2"></i>Ingrediente *
+                                    </label>
+                                    {{ form.ingrediente }}
+                                    {% if form.ingrediente.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.ingrediente.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.fornecedor.id_for_label }}" class="form-label">
+                                        <i class="fas fa-truck me-2"></i>Fornecedor
+                                    </label>
+                                    {{ form.fornecedor }}
+                                    {% if form.fornecedor.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.fornecedor.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        <a href="{% url 'estoque:adicionar_fornecedor' %}" target="_blank">
+                                            Cadastrar novo fornecedor
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.quantidade.id_for_label }}" class="form-label">
+                                        <i class="fas fa-weight me-2"></i>Quantidade *
+                                    </label>
+                                    {{ form.quantidade }}
+                                    {% if form.quantidade.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.quantidade.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.preco_unitario_reais.id_for_label }}" class="form-label">
+                                        <i class="fas fa-dollar-sign me-2"></i>Preço Unitário *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        {{ form.preco_unitario_reais }}
+                                    </div>
+                                    {% if form.preco_unitario_reais.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.preco_unitario_reais.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-calculator me-2"></i>Valor Total
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control" id="valor-total" readonly>
+                                    </div>
+                                    <small class="form-text text-muted">Calculado automaticamente</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.data_compra.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar me-2"></i>Data da Compra *
+                                    </label>
+                                    {{ form.data_compra }}
+                                    {% if form.data_compra.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.data_compra.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.numero_nota.id_for_label }}" class="form-label">
+                                        <i class="fas fa-receipt me-2"></i>Número da Nota
+                                    </label>
+                                    {{ form.numero_nota }}
+                                    {% if form.numero_nota.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.numero_nota.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.observacoes.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Informações do Ingrediente -->
+                        <div class="alert alert-info" id="info-ingrediente" style="display: none;">
+                            <h6><i class="fas fa-info-circle me-2"></i>Informações do Ingrediente</h6>
+                            <div id="info-content"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'estoque:lista_compras' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Registrar Compra
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantidadeInput = document.getElementById('{{ form.quantidade.id_for_label }}');
+    const precoInput = document.getElementById('{{ form.preco_unitario_reais.id_for_label }}');
+    const valorTotalInput = document.getElementById('valor-total');
+    const ingredienteSelect = document.getElementById('{{ form.ingrediente.id_for_label }}');
+    const infoDiv = document.getElementById('info-ingrediente');
+    const infoContent = document.getElementById('info-content');
+
+    // Calcular valor total
+    function calcularTotal() {
+        const quantidade = parseFloat(quantidadeInput.value) || 0;
+        const preco = parseFloat(precoInput.value) || 0;
+        const total = quantidade * preco;
+        valorTotalInput.value = total.toFixed(2);
+    }
+
+    // Buscar informações do ingrediente
+    function buscarInfoIngrediente() {
+        const ingredienteId = ingredienteSelect.value;
+        if (ingredienteId) {
+            fetch(`/estoque/ajax/ingrediente/${ingredienteId}/preco/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        infoContent.innerHTML = `
+                            <p><strong>Preço atual:</strong> R$ ${data.preco_reais.toFixed(2)}</p>
+                            <p><strong>Variação:</strong> 
+                                <span id="variacao-preco">Digite o preço para ver a variação</span>
+                            </p>
+                        `;
+                        infoDiv.style.display = 'block';
+                        
+                        // Atualizar variação quando mudar o preço
+                        precoInput.addEventListener('input', function() {
+                            const novoPreco = parseFloat(this.value) || 0;
+                            const precoAtual = data.preco_reais;
+                            const variacao = ((novoPreco - precoAtual) / precoAtual) * 100;
+                            
+                            let variacaoText = '';
+                            if (variacao > 0) {
+                                variacaoText = `<span class="text-danger">+${variacao.toFixed(1)}% (aumento)</span>`;
+                            } else if (variacao < 0) {
+                                variacaoText = `<span class="text-success">${variacao.toFixed(1)}% (redução)</span>`;
+                            } else {
+                                variacaoText = '<span class="text-muted">Mesmo preço</span>';
+                            }
+                            
+                            document.getElementById('variacao-preco').innerHTML = variacaoText;
+                        });
+                    } else {
+                        infoDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar informações:', error);
+                    infoDiv.style.display = 'none';
+                });
+        } else {
+            infoDiv.style.display = 'none';
+        }
+    }
+
+    // Event listeners
+    quantidadeInput.addEventListener('input', calcularTotal);
+    precoInput.addEventListener('input', calcularTotal);
+    ingredienteSelect.addEventListener('change', buscarInfoIngrediente);
+
+    // Definir data atual como padrão
+    const dataInput = document.getElementById('{{ form.data_compra.id_for_label }}');
+    if (!dataInput.value) {
+        const hoje = new Date().toISOString().split('T')[0];
+        dataInput.value = hoje;
+    }
+
+    // Calcular total inicial
+    calcularTotal();
+    
+    // Buscar info do ingrediente se já estiver selecionado
+    if (ingredienteSelect.value) {
+        buscarInfoIngrediente();
+    }
+});
+</script>
+{% endblock %}

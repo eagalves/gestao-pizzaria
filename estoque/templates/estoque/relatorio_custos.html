@@ -1,0 +1,297 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Relatório de Custos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-chart-line me-2"></i>Relatório de Custos</h2>
+                    <p class="text-muted mb-0">Análise de rentabilidade dos produtos</p>
+                </div>
+                <a href="{% url 'estoque:dashboard_estoque' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if produtos %}
+    <!-- Resumo Geral -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4>{{ produtos|length }}</h4>
+                    <p class="mb-0">Produtos Analisados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>
+                        {% for produto in produtos %}
+                            {% if produto.margem >= 100 %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% endfor %}
+                    </h4>
+                    <p class="mb-0">Margem > 100%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4>
+                        {% for produto in produtos %}
+                            {% if produto.margem < 100 and produto.margem >= 50 %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% endfor %}
+                    </h4>
+                    <p class="mb-0">Margem 50-100%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h4>
+                        {% for produto in produtos %}
+                            {% if produto.margem < 50 %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% endfor %}
+                    </h4>
+                    <p class="mb-0">Margem < 50%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Produtos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-table me-2"></i>Análise Detalhada por Produto</h5>
+                    <small class="text-muted">Produtos ordenados por margem de lucro (menor para maior)</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Preço Base</th>
+                                    <th>Custo Real</th>
+                                    <th>Preço Venda</th>
+                                    <th>Lucro</th>
+                                    <th>Margem %</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in produtos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.produto.nome }}</strong>
+                                        {% if item.produto.categoria %}
+                                            <br><small class="text-muted">{{ item.produto.categoria.nome }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>R$ {{ item.preco_base|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            R$ {{ item.preco_custo|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>R$ {{ item.preco_venda|floatformat:2 }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if item.lucro >= 0 %}
+                                            <span class="text-success">R$ {{ item.lucro|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-danger">R$ {{ item.lucro|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.margem >= 100 %}
+                                            <span class="badge bg-success">{{ item.margem|floatformat:1 }}%</span>
+                                        {% elif item.margem >= 50 %}
+                                            <span class="badge bg-warning">{{ item.margem|floatformat:1 }}%</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ item.margem|floatformat:1 }}%</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.margem >= 100 %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-thumbs-up me-1"></i>Excelente
+                                            </span>
+                                        {% elif item.margem >= 50 %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation me-1"></i>Atenção
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-thumbs-down me-1"></i>Crítico
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'produtos:editar_produto' item.produto.id %}" 
+                                               class="btn btn-outline-primary" title="Editar Produto">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="verDetalhes({{ item.produto.id }})" 
+                                                    title="Ver Detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dicas e Recomendações -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Dicas para Melhorar Rentabilidade</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-check text-success me-2"></i>Produtos com margem < 50%: Revisar preços ou receitas</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Negociar melhores preços com fornecedores</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Otimizar receitas reduzindo ingredientes caros</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Focar vendas nos produtos mais rentáveis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Produtos que Precisam de Atenção</h6>
+                </div>
+                <div class="card-body">
+                    {% if produtos %}
+                        {% for item in produtos %}
+                            {% if item.margem < 50 %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ item.produto.nome }}</span>
+                                    <span class="badge bg-danger">{{ item.margem|floatformat:1 }}%</span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if not produtos|slice:":1" %}
+                            <p class="text-success mb-0">
+                                <i class="fas fa-check me-2"></i>Todos os produtos estão com margem adequada!
+                            </p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Estado Vazio -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhum produto com preços configurados</h5>
+                    <p class="text-muted">Para gerar o relatório de custos, você precisa:</p>
+                    <ol class="list-unstyled text-muted">
+                        <li>1. Cadastrar ingredientes</li>
+                        <li>2. Registrar compras (preços dos ingredientes)</li>
+                        <li>3. Criar produtos com receitas</li>
+                        <li>4. Definir preços de venda</li>
+                    </ol>
+                    <div class="mt-4">
+                        <a href="{% url 'produtos:lista_produtos' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-pizza-slice me-2"></i>Gerenciar Produtos
+                        </a>
+                        <a href="{% url 'estoque:registrar_compra' %}" class="btn btn-success">
+                            <i class="fas fa-shopping-cart me-2"></i>Registrar Compra
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Detalhes do Produto -->
+<div class="modal fade" id="modalDetalhes" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detalhes-content">
+                <!-- Conteúdo carregado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function verDetalhes(produtoId) {
+    // Aqui você pode implementar uma chamada AJAX para buscar detalhes do produto
+    // Por enquanto, vamos mostrar uma mensagem simples
+    document.getElementById('detalhes-content').innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-cog fa-spin fa-2x text-muted mb-3"></i>
+            <p>Funcionalidade em desenvolvimento...</p>
+            <p>Em breve você poderá ver:</p>
+            <ul class="list-unstyled">
+                <li>• Detalhamento dos custos por ingrediente</li>
+                <li>• Histórico de variação de preços</li>
+                <li>• Sugestões de otimização</li>
+            </ul>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetalhes'));
+    modal.show();
+}
+
+// Adicionar tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.card-header h6 {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

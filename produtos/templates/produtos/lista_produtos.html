@@ -33,6 +33,8 @@
                 <th>Categoria</th>
                 <th>Ingredientes</th>
                 <th>Preço Base</th>
+                <th>Custo Total</th>
+                <th>Preço Venda</th>
                 <th>Status</th>
                 <th class="text-end">Ações</th>
             </tr>
@@ -51,23 +53,61 @@
                             {% endfor %}
                         </small>
                     </td>
-                    <td>R$ {{ produto.preco_atual|floatformat:2 }}</td>
-                    <td><span class="badge bg-success-light text-success">Disponível</span></td>
+                    <td>
+                        {% if produto.preco_base_atual > 0 %}
+                            <span class="badge bg-primary">R$ {{ produto.preco_base_atual|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="text-muted">Não definido</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span class="fw-bold">R$ {{ produto.preco_custo_atual|floatformat:2 }}</span>
+                            <small class="text-muted">
+                                Base: R$ {{ produto.preco_base_atual|floatformat:2 }} + 
+                                Ingred: R$ {{ produto.custo_ingredientes|floatformat:2 }}
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if produto.preco_venda_atual > 0 %}
+                            <span class="fw-bold text-success">R$ {{ produto.preco_venda_atual|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="text-muted">Não definido</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if produto.disponivel %}
+                            <span class="badge bg-success-light text-success">Disponível</span>
+                        {% else %}
+                            <span class="badge bg-danger-light text-danger">Indisponível</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end">
-                        <a href="#" class="text-orange me-3" data-bs-toggle="modal" data-bs-target="#modalEditarProduto"
-                           data-id="{{ produto.id }}"
-                           data-nome="{{ produto.nome|escapejs }}"
-                           data-descricao="{{ produto.descricao|default:''|escapejs }}"
-                           data-categoria="{{ produto.categoria.id|default:'' }}"
-                           data-preco="{{ produto.preco_atual }}"
-                           data-tempo="{{ produto.tempo_preparo_minutos }}">
-                         <i class="fas fa-edit"></i></a>
-                        <a href="{% url 'excluir_produto' produto.id %}" class="text-danger" onclick="return confirm('Tem certeza que deseja excluir este produto?');"><i class="fas fa-trash-alt"></i></a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'gerenciar_precos' produto.id %}" class="btn btn-outline-success" title="Gerenciar Preços">
+                                <i class="fas fa-dollar-sign"></i>
+                            </a>
+                            <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarProduto"
+                               data-id="{{ produto.id }}"
+                               data-nome="{{ produto.nome|escapejs }}"
+                               data-descricao="{{ produto.descricao|default:''|escapejs }}"
+                               data-categoria="{{ produto.categoria.id|default:'' }}"
+                               data-preco="{{ produto.preco_base_atual }}"
+                               data-tempo="{{ produto.tempo_preparo_minutos }}"
+                               title="Editar Produto">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'excluir_produto' produto.id %}" class="btn btn-outline-danger" 
+                               onclick="return confirm('Tem certeza que deseja excluir este produto?');" title="Excluir Produto">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
+                    <td colspan="8" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
                 </tr>
             {% endfor %}
         </tbody>

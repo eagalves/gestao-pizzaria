@@ -1,4 +1,6 @@
 from django import forms
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 from .models import Produto, PrecoProduto, CategoriaProduto, ProdutoIngrediente
 from ingredientes.models import Ingrediente
 
@@ -59,3 +61,61 @@ class CategoriaForm(forms.ModelForm):
         help_texts = {
             'ordem': 'Menor número aparece primeiro no cardápio'
         }
+
+
+class PrecoProdutoForm(forms.ModelForm):
+    """Form para gerenciar preços de produtos."""
+    
+    preco_base_reais = forms.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': '0,00'
+        }),
+        label='Preço Base (R$)',
+        help_text='Preço base do produto (sem considerar ingredientes)'
+    )
+    
+    preco_venda_reais = forms.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': '0,00'
+        }),
+        label='Preço de Venda (R$)',
+        help_text='Preço final que será cobrado do cliente'
+    )
+
+    class Meta:
+        model = PrecoProduto
+        fields = []  # Não incluímos campos do model diretamente
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            # Preencher preços em reais
+            self.fields['preco_base_reais'].initial = self.instance.preco_base
+            self.fields['preco_venda_reais'].initial = self.instance.preco_venda
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Converter preços de reais para centavos
+        preco_base_reais = self.cleaned_data['preco_base_reais']
+        preco_venda_reais = self.cleaned_data['preco_venda_reais']
+        
+        instance.preco_base_centavos = int(preco_base_reais * 100)
+        instance.preco_venda_centavos = int(preco_venda_reais * 100)
+        
+        if commit:
+            instance.save()
+            # Recalcular custo após salvar
+            instance.produto.recalcular_custo()
+        
+        return instance

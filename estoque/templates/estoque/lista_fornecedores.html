@@ -1,0 +1,141 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Fornecedores{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-truck me-2"></i>Fornecedores</h2>
+                    <p class="text-muted mb-0">Gerencie seus fornecedores de ingredientes</p>
+                </div>
+                <div>
+                    <a href="{% url 'estoque:adicionar_fornecedor' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Novo Fornecedor
+                    </a>
+                    <a href="{% url 'estoque:dashboard_estoque' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    {% if fornecedores %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row align-items-end">
+                        <div class="col-md-10">
+                            <label for="busca" class="form-label">Buscar Fornecedor</label>
+                            <input type="text" class="form-control" id="busca" name="busca" 
+                                   value="{{ busca }}" placeholder="Nome ou CNPJ do fornecedor...">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Fornecedores -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if fornecedores %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Fornecedor</th>
+                                        <th>CNPJ</th>
+                                        <th>Contato</th>
+                                        <th>Status</th>
+                                        <th>Cadastrado em</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fornecedor in fornecedores %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ fornecedor.nome }}</strong>
+                                            {% if fornecedor.endereco %}
+                                                <br><small class="text-muted">{{ fornecedor.endereco|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fornecedor.cnpj %}
+                                                {{ fornecedor.cnpj }}
+                                            {% else %}
+                                                <span class="text-muted">Não informado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fornecedor.telefone %}
+                                                <i class="fas fa-phone me-1"></i>{{ fornecedor.telefone }}<br>
+                                            {% endif %}
+                                            {% if fornecedor.email %}
+                                                <i class="fas fa-envelope me-1"></i>{{ fornecedor.email }}
+                                            {% endif %}
+                                            {% if not fornecedor.telefone and not fornecedor.email %}
+                                                <span class="text-muted">Não informado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if fornecedor.ativo %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Ativo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Inativo
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ fornecedor.criado_em|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'estoque:editar_fornecedor' fornecedor.id %}" 
+                                                   class="btn btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum fornecedor encontrado</h5>
+                            <p class="text-muted">
+                                {% if busca %}
+                                    Tente ajustar os filtros de busca.
+                                {% else %}
+                                    Comece cadastrando seu primeiro fornecedor.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'estoque:adicionar_fornecedor' %}" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>Cadastrar Primeiro Fornecedor
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
