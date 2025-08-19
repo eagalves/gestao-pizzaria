@@ -122,8 +122,8 @@ def detalhes_cliente(request, cliente_id):
         'endereco_principal': cliente.endereco_principal.endereco_completo() if cliente.endereco_principal else 'Nenhum endereço cadastrado',
         'stats': {
             'total_pedidos': stats['total_pedidos'],
-            'total_gasto': f"R$ {stats['total_gasto']:.2f}",
-            'ticket_medio': f"R$ {stats['ticket_medio']:.2f}",
+            'total_gasto': f"R$ {float(stats['total_gasto']) if stats['total_gasto'] else 0:.2f}",
+            'ticket_medio': f"R$ {float(stats['ticket_medio']) if stats['ticket_medio'] else 0:.2f}",
             'ultimo_pedido': stats['ultimo_pedido'].data_criacao.strftime('%d/%m/%Y às %H:%M') if stats['ultimo_pedido'] else 'Nunca',
             'pedidos_por_status': {item['status']: item['count'] for item in stats['pedidos_por_status']}
         },
@@ -380,7 +380,7 @@ def buscar_clientes(request):
             'telefone': cliente.telefone,
             'endereco_principal': cliente.endereco_principal.endereco_completo() if cliente.endereco_principal else '',
             'total_pedidos': cliente.total_pedidos(),
-            'total_gasto': cliente.total_gasto()
+            'total_gasto': float(cliente.total_gasto()) if cliente.total_gasto() else 0.0
         } for cliente in clientes]
     }
     
