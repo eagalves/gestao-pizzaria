@@ -392,7 +392,7 @@
 let itemCount = 0;
 const produtos = [
   {% for p in produtos_disponiveis %}
-    {id: {{ p.id }}, nome: "{{ p.nome|escapejs }}", preco: {{ p.preco_atual }}},
+    {id: {{ p.id }}, nome: "{{ p.nome|escapejs }}", preco: {{ p.preco_venda_atual|default:0 }}},
   {% endfor %}
 ];
 

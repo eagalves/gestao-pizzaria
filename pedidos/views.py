@@ -59,7 +59,7 @@ def lista_pedidos(request):
                     pedido=pedido,
                     produto=produto,
                     quantidade=qtd,
-                    valor_unitario=produto.preco_atual,
+                    valor_unitario=produto.preco_venda_atual,
                     observacao_item=obs_item,
                 )
         # Atualizar total
@@ -243,7 +243,7 @@ def editar_pedido(request, pedido_id):
                         pedido=pedido,
                         produto=produto,
                         quantidade=qtd,
-                        valor_unitario=produto.preco_atual,
+                        valor_unitario=produto.preco_venda_atual,
                         observacao_item=obs_item,
                     )
             
@@ -273,7 +273,7 @@ def editar_pedido(request, pedido_id):
         produtos_disponiveis.append({
             'id': produto.id,
             'nome': produto.nome,
-            'preco': float(produto.preco_atual)
+            'preco': float(produto.preco_venda_atual)
         })
     
     # Informações do cliente
