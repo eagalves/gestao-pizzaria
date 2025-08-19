@@ -99,15 +99,16 @@ def detalhes_cliente(request, cliente_id):
     pizzaria = usuario_pizzaria.pizzaria
     cliente = get_object_or_404(Cliente, id=cliente_id, pizzaria=pizzaria)
     
-    # Buscar pedidos recentes
-    pedidos_recentes = cliente.pedidos.order_by('-data_criacao')[:5]
+    # Buscar TODOS os pedidos do cliente
+    todos_pedidos = cliente.pedidos.order_by('-data_criacao')
     
-    # Estatísticas
+    # Estatísticas atualizadas
     stats = {
         'total_pedidos': cliente.total_pedidos(),
         'total_gasto': cliente.total_gasto(),
         'ticket_medio': cliente.ticket_medio(),
-        'ultimo_pedido': cliente.ultimo_pedido()
+        'ultimo_pedido': cliente.ultimo_pedido(),
+        'pedidos_por_status': cliente.pedidos_por_status()
     }
     
     data = {
@@ -123,14 +124,22 @@ def detalhes_cliente(request, cliente_id):
             'total_pedidos': stats['total_pedidos'],
             'total_gasto': f"R$ {stats['total_gasto']:.2f}",
             'ticket_medio': f"R$ {stats['ticket_medio']:.2f}",
-            'ultimo_pedido': stats['ultimo_pedido'].data_criacao.strftime('%d/%m/%Y') if stats['ultimo_pedido'] else 'Nunca'
+            'ultimo_pedido': stats['ultimo_pedido'].data_criacao.strftime('%d/%m/%Y às %H:%M') if stats['ultimo_pedido'] else 'Nunca',
+            'pedidos_por_status': {item['status']: item['count'] for item in stats['pedidos_por_status']}
         },
-        'pedidos_recentes': [{
+        'todos_pedidos': [{
             'id': pedido.id,
             'data': pedido.data_criacao.strftime('%d/%m/%Y'),
+            'hora': pedido.data_criacao.strftime('%H:%M'),
+            'data_completa': pedido.data_criacao.strftime('%d/%m/%Y às %H:%M'),
             'total': f"R$ {pedido.total:.2f}",
-            'status': pedido.get_status_display()
-        } for pedido in pedidos_recentes],
+            'total_raw': float(pedido.total),
+            'status': pedido.status,
+            'status_display': pedido.get_status_display(),
+            'forma_pagamento': pedido.get_forma_pagamento_display(),
+            'observacoes': pedido.observacoes or '',
+            'itens_count': pedido.itens.count()
+        } for pedido in todos_pedidos],
         'enderecos': [{
             'id': endereco.id,
             'nome': endereco.nome,

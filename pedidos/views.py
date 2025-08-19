@@ -31,6 +31,39 @@ def lista_pedidos(request):
                 cliente = Cliente.objects.get(id=cliente_id, pizzaria=pizzaria)
             except Cliente.DoesNotExist:
                 cliente = None
+        else:
+            # Se não foi selecionado um cliente, tentar encontrar por nome/telefone
+            from clientes.models import Cliente
+            from django.db.models import Q
+            
+            if cliente_nome:
+                # Buscar cliente por nome exato primeiro
+                cliente = Cliente.objects.filter(
+                    nome__iexact=cliente_nome,
+                    pizzaria=pizzaria
+                ).first()
+                
+                # Se não encontrou e tem telefone, buscar por telefone
+                if not cliente and cliente_telefone:
+                    cliente = Cliente.objects.filter(
+                        telefone=cliente_telefone,
+                        pizzaria=pizzaria
+                    ).first()
+                    
+                # Se ainda não encontrou, buscar por nome similar
+                if not cliente:
+                    clientes_similares = Cliente.objects.filter(
+                        nome__icontains=cliente_nome.split()[0],  # Primeiro nome
+                        pizzaria=pizzaria
+                    )
+                    if clientes_similares.count() == 1:
+                        cliente = clientes_similares.first()
+            elif cliente_telefone:
+                # Buscar apenas por telefone
+                cliente = Cliente.objects.filter(
+                    telefone=cliente_telefone,
+                    pizzaria=pizzaria
+                ).first()
 
         pedido = Pedido.objects.create(
             pizzaria=pizzaria,
@@ -202,12 +235,46 @@ def editar_pedido(request, pedido_id):
             
             # Buscar cliente se foi selecionado
             cliente = None
+            pizzaria = pedido.pizzaria  # Definir pizzaria aqui
             if cliente_id:
                 try:
                     from clientes.models import Cliente
                     cliente = Cliente.objects.get(id=cliente_id, pizzaria=pizzaria)
                 except Cliente.DoesNotExist:
                     cliente = None
+            else:
+                # Se não foi selecionado um cliente, tentar encontrar por nome/telefone
+                from clientes.models import Cliente
+                from django.db.models import Q
+                
+                if cliente_nome:
+                    # Buscar cliente por nome exato primeiro
+                    cliente = Cliente.objects.filter(
+                        nome__iexact=cliente_nome,
+                        pizzaria=pizzaria
+                    ).first()
+                    
+                    # Se não encontrou e tem telefone, buscar por telefone
+                    if not cliente and cliente_telefone:
+                        cliente = Cliente.objects.filter(
+                            telefone=cliente_telefone,
+                            pizzaria=pizzaria
+                        ).first()
+                        
+                    # Se ainda não encontrou, buscar por nome similar
+                    if not cliente:
+                        clientes_similares = Cliente.objects.filter(
+                            nome__icontains=cliente_nome.split()[0],  # Primeiro nome
+                            pizzaria=pizzaria
+                        )
+                        if clientes_similares.count() == 1:
+                            cliente = clientes_similares.first()
+                elif cliente_telefone:
+                    # Buscar apenas por telefone
+                    cliente = Cliente.objects.filter(
+                        telefone=cliente_telefone,
+                        pizzaria=pizzaria
+                    ).first()
             
             # Atualizar pedido
             pedido.cliente = cliente
