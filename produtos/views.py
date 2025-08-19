@@ -344,14 +344,10 @@ def gerenciar_precos(request, produto_id):
     else:
         form = PrecoProdutoForm(instance=preco_atual)
     
-    # Calcular informações adicionais
-    custo_ingredientes = produto.custo_ingredientes
-    
     context = {
         'produto': produto,
         'form': form,
         'preco_atual': preco_atual,
-        'custo_ingredientes': custo_ingredientes,
         'ingredientes': produto.get_ingredientes(),
     }
     

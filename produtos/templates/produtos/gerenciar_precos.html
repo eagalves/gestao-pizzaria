@@ -71,11 +71,11 @@
 
                                 <!-- Cálculos Automáticos -->
                                 <div class="alert alert-info">
-                                    <h6><i class="fas fa-calculator me-2"></i>Cálculos Automáticos</h6>
+                                    <h6><i class="fas fa-calculator me-2"></i>Análise de Rentabilidade</h6>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <p class="mb-1"><strong>Custo dos Ingredientes:</strong> 
-                                                <span class="badge bg-secondary">R$ {{ custo_ingredientes|floatformat:2 }}</span>
+                                                <span class="badge bg-secondary">R$ {{ produto.custo_ingredientes|floatformat:2 }}</span>
                                             </p>
                                             <p class="mb-1"><strong>Custo Total:</strong> 
                                                 <span id="custo-total" class="badge bg-warning">R$ 0,00</span>
@@ -89,6 +89,13 @@
                                                 <span id="lucro-liquido" class="badge bg-primary">R$ 0,00</span>
                                             </p>
                                         </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>Custo Total</strong> = Preço Base + Custo dos Ingredientes<br>
+                                            <strong>Margem</strong> = (Preço Venda - Custo Total) ÷ Preço Venda × 100%
+                                        </small>
                                     </div>
                                 </div>
 
@@ -156,7 +163,7 @@
                                             {% endfor %}
                                             <tr class="table-warning">
                                                 <td colspan="2"><strong>Total Ingredientes:</strong></td>
-                                                <td><strong>R$ {{ custo_ingredientes|floatformat:2 }}</strong></td>
+                                                <td><strong>R$ {{ produto.custo_ingredientes|floatformat:2 }}</strong></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -169,9 +176,19 @@
 
                     <!-- Alertas -->
                     <div class="mt-4">
-                        <div class="alert alert-warning" id="alerta-margem" style="display: none;">
-                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Atenção!</h6>
-                            <p class="mb-0">A margem de lucro está muito baixa. Considere ajustar os preços.</p>
+                        <div class="alert alert-danger" id="alerta-prejuizo" style="display: none;">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>⚠️ Atenção: Prejuízo!</h6>
+                            <p class="mb-0">O preço de venda não cobre os custos. Você pode salvar mesmo assim, mas terá prejuízo neste produto.</p>
+                        </div>
+                        
+                        <div class="alert alert-warning" id="alerta-margem-baixa" style="display: none;">
+                            <h6><i class="fas fa-info-circle me-2"></i>💡 Dica: Margem Baixa!</h6>
+                            <p class="mb-0">A margem de lucro está baixa (menos de 30%). Você pode salvar, mas considere aumentar o preço se possível.</p>
+                        </div>
+                        
+                        <div class="alert alert-success" id="alerta-margem-boa" style="display: none;">
+                            <h6><i class="fas fa-check-circle me-2"></i>✅ Excelente!</h6>
+                            <p class="mb-0">Margem de lucro saudável (50% ou mais). Produto bem precificado!</p>
                         </div>
                     </div>
                 </div>
@@ -184,50 +201,95 @@
 document.addEventListener('DOMContentLoaded', function() {
     const precoBaseInput = document.getElementById('{{ form.preco_base_reais.id_for_label }}');
     const precoVendaInput = document.getElementById('{{ form.preco_venda_reais.id_for_label }}');
-    const custoIngredientes = {{ custo_ingredientes }};
+    const custoIngredientesCentavos = {{ produto.custo_ingredientes_centavos }};
     
     const custoTotalSpan = document.getElementById('custo-total');
     const margemLucroSpan = document.getElementById('margem-lucro');
     const lucroLiquidoSpan = document.getElementById('lucro-liquido');
-    const alertaMargem = document.getElementById('alerta-margem');
+    const alertaPrejuizo = document.getElementById('alerta-prejuizo');
+    const alertaMargemBaixa = document.getElementById('alerta-margem-baixa');
+    const alertaMargemBoa = document.getElementById('alerta-margem-boa');
 
     function calcularPrecos() {
-        const precoBase = parseFloat(precoBaseInput.value) || 0;
-        const precoVenda = parseFloat(precoVendaInput.value) || 0;
+        const precoBaseReais = parseFloat(precoBaseInput.value) || 0;
+        const precoVendaReais = parseFloat(precoVendaInput.value) || 0;
         
-        // Custo Total = Preço Base + Custo dos Ingredientes
-        const custoTotal = precoBase + custoIngredientes;
+        // Converter para centavos (inteiros)
+        const precoBaseCentavos = Math.round(precoBaseReais * 100);
+        const precoVendaCentavos = Math.round(precoVendaReais * 100);
         
-        // Lucro = Preço Venda - Custo Total
-        const lucro = precoVenda - custoTotal;
+        // Custo Total = Preço Base + Custo dos Ingredientes (tudo em centavos)
+        const custoTotalCentavos = precoBaseCentavos + custoIngredientesCentavos;
+        
+        // Lucro = Preço Venda - Custo Total (em centavos)
+        const lucroCentavos = precoVendaCentavos - custoTotalCentavos;
         
         // Margem = (Lucro / Preço Venda) * 100
-        const margem = precoVenda > 0 ? (lucro / precoVenda) * 100 : 0;
+        const margem = precoVendaCentavos > 0 ? (lucroCentavos / precoVendaCentavos) * 100 : 0;
+        
+        // Converter para reais para exibição
+        const custoTotalReais = custoTotalCentavos / 100;
+        const lucroReais = lucroCentavos / 100;
         
         // Atualizar displays
-        custoTotalSpan.textContent = `R$ ${custoTotal.toFixed(2)}`;
+        custoTotalSpan.textContent = `R$ ${custoTotalReais.toFixed(2)}`;
         margemLucroSpan.textContent = `${margem.toFixed(1)}%`;
-        lucroLiquidoSpan.textContent = `R$ ${lucro.toFixed(2)}`;
+        lucroLiquidoSpan.textContent = `R$ ${lucroReais.toFixed(2)}`;
         
-        // Alterar cores baseado na margem
-        if (margem < 50) {
+        // Esconder todos os alertas
+        alertaPrejuizo.style.display = 'none';
+        alertaMargemBaixa.style.display = 'none';
+        alertaMargemBoa.style.display = 'none';
+        
+        // Alterar cores e alertas baseado na situação
+        if (lucroCentavos < 0) {
+            // PREJUÍZO
             margemLucroSpan.className = 'badge bg-danger';
-            alertaMargem.style.display = 'block';
-        } else if (margem < 100) {
-            margemLucroSpan.className = 'badge bg-warning';
-            alertaMargem.style.display = 'none';
-        } else {
-            margemLucroSpan.className = 'badge bg-success';
-            alertaMargem.style.display = 'none';
-        }
-        
-        // Alterar cor do lucro
-        if (lucro < 0) {
             lucroLiquidoSpan.className = 'badge bg-danger';
-        } else if (lucro < 5) {
+            alertaPrejuizo.style.display = 'block';
+        } else if (margem < 30) {
+            // MARGEM MUITO BAIXA
+            margemLucroSpan.className = 'badge bg-warning';
+            lucroLiquidoSpan.className = 'badge bg-warning';
+            alertaMargemBaixa.style.display = 'block';
+        } else if (margem < 50) {
+            // MARGEM BAIXA
+            margemLucroSpan.className = 'badge bg-warning';
             lucroLiquidoSpan.className = 'badge bg-warning';
         } else {
+            // MARGEM BOA
+            margemLucroSpan.className = 'badge bg-success';
             lucroLiquidoSpan.className = 'badge bg-success';
+            if (margem >= 50) {
+                alertaMargemBoa.style.display = 'block';
+            }
+        }
+        
+        // Botão habilitado se pelo menos o preço de venda estiver preenchido
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (precoVendaReais > 0) {
+            // Habilitado se tiver preço de venda (preço base pode ser 0)
+            submitBtn.disabled = false;
+            submitBtn.className = 'btn btn-success'; // SEMPRE VERDE
+            
+            if (lucroCentavos < 0) {
+                // Prejuízo - botão verde mas com texto informativo
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Salvar (Prejuízo)';
+                submitBtn.title = 'Atenção: Este preço gerará prejuízo!';
+            } else if (margem < 30) {
+                // Margem baixa - botão verde mas com texto informativo
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Salvar (Margem Baixa)';
+                submitBtn.title = 'Atenção: Margem muito baixa!';
+            } else {
+                // Margem boa - botão verde com texto padrão
+                submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Salvar Preços';
+                submitBtn.title = 'Preços com margem adequada';
+            }
+        } else {
+            // Só desabilitar se não tiver preço de venda informado
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Salvar Preços';
+            submitBtn.className = 'btn btn-secondary';
         }
     }
 

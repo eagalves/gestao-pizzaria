@@ -35,6 +35,7 @@
                 <th>Preço Base</th>
                 <th>Custo Total</th>
                 <th>Preço Venda</th>
+                <th>Margem</th>
                 <th>Status</th>
                 <th class="text-end">Ações</th>
             </tr>
@@ -77,6 +78,21 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if produto.preco_venda_atual > 0 and produto.preco_custo_atual > 0 %}
+                            {% with margem=produto.preco_atual.margem_percentual %}
+                                {% if margem >= 100 %}
+                                    <span class="badge bg-success">{{ margem|floatformat:1 }}%</span>
+                                {% elif margem >= 50 %}
+                                    <span class="badge bg-warning">{{ margem|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ margem|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <span class="text-muted">N/D</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if produto.disponivel %}
                             <span class="badge bg-success-light text-success">Disponível</span>
                         {% else %}
@@ -107,7 +123,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
+                    <td colspan="9" class="text-center py-5 text-muted">Nenhum produto cadastrado</td>
                 </tr>
             {% endfor %}
         </tbody>

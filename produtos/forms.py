@@ -69,14 +69,15 @@ class PrecoProdutoForm(forms.ModelForm):
     preco_base_reais = forms.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(0.01)],
+        validators=[MinValueValidator(0.00)],
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'step': '0.01',
-            'placeholder': '0,00'
+            'placeholder': '0,00',
+            'min': '0.00'
         }),
         label='Preço Base (R$)',
-        help_text='Preço base do produto (sem considerar ingredientes)'
+        help_text='Preço base do produto (custo operacional, mão de obra, etc.) - pode ser R$ 0,00'
     )
     
     preco_venda_reais = forms.DecimalField(
@@ -86,7 +87,8 @@ class PrecoProdutoForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'step': '0.01',
-            'placeholder': '0,00'
+            'placeholder': '0,00',
+            'min': '0.01'
         }),
         label='Preço de Venda (R$)',
         help_text='Preço final que será cobrado do cliente'
@@ -102,6 +104,26 @@ class PrecoProdutoForm(forms.ModelForm):
             # Preencher preços em reais
             self.fields['preco_base_reais'].initial = self.instance.preco_base
             self.fields['preco_venda_reais'].initial = self.instance.preco_venda
+
+    def clean(self):
+        cleaned_data = super().clean()
+        preco_base = cleaned_data.get('preco_base_reais')
+        preco_venda = cleaned_data.get('preco_venda_reais')
+        
+        if preco_base and preco_venda:
+            # Converter para centavos (inteiros)
+            preco_base_centavos = int(preco_base * 100)
+            preco_venda_centavos = int(preco_venda * 100)
+            
+            # Calcular custo dos ingredientes em centavos
+            if hasattr(self, 'instance') and self.instance.produto:
+                custo_ingredientes_centavos = self.instance.produto.custo_ingredientes_centavos
+                custo_total_centavos = preco_base_centavos + custo_ingredientes_centavos
+                
+                # Não fazemos validações que impedem salvamento
+                # Os alertas visuais ficam no JavaScript do template
+        
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
