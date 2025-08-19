@@ -40,11 +40,7 @@ class EstoqueIngrediente(models.Model):
     UNIDADES_CHOICES = [
         ('g', 'Gramas (g)'),
         ('kg', 'Quilos (kg)'),
-        ('ml', 'Mililitros (ml)'),
-        ('l', 'Litros (l)'),
         ('un', 'Unidade'),
-        ('fatia', 'Fatia'),
-        ('pitada', 'Pitada'),
     ]
     
     ingrediente = models.OneToOneField(
@@ -130,6 +126,12 @@ class EstoqueIngrediente(models.Model):
 class CompraIngrediente(models.Model):
     """Registro de compras de ingredientes."""
     
+    UNIDADES_CHOICES = [
+        ('g', 'Gramas (g)'),
+        ('kg', 'Quilos (kg)'),
+        ('un', 'Unidade'),
+    ]
+    
     ingrediente = models.ForeignKey(
         Ingrediente,
         on_delete=models.CASCADE,
@@ -145,6 +147,12 @@ class CompraIngrediente(models.Model):
         max_digits=10,
         decimal_places=3,
         validators=[MinValueValidator(0.001)]
+    )
+    unidade = models.CharField(
+        max_length=10,
+        choices=UNIDADES_CHOICES,
+        default='kg',
+        help_text="Unidade da quantidade comprada"
     )
     
     # Preço unitário em centavos
@@ -199,18 +207,62 @@ class CompraIngrediente(models.Model):
             ingrediente=self.ingrediente,
             defaults={
                 'quantidade_atual': 0,
-                'unidade_medida': 'kg',
+                'unidade_medida': self.unidade,  # Usar a unidade da compra
                 'preco_compra_atual_centavos': self.preco_unitario_centavos
             }
         )
         
+        # Se estoque foi criado agora, usar a unidade da compra
+        if created:
+            estoque.unidade_medida = self.unidade
+        
+        # Converter quantidade para a unidade do estoque
+        quantidade_convertida = self._converter_quantidade_para_estoque(estoque)
+        
         # Adicionar quantidade ao estoque
-        estoque.quantidade_atual += self.quantidade
+        estoque.quantidade_atual += quantidade_convertida
         estoque.data_ultima_compra = self.data_compra
         
-        # Atualizar preço (média ponderada simples por agora)
-        estoque.preco_compra_atual_centavos = self.preco_unitario_centavos
+        # Atualizar preço (convertendo para a unidade do estoque)
+        preco_convertido = self._converter_preco_para_estoque(estoque)
+        estoque.preco_compra_atual_centavos = preco_convertido
         estoque.save()
+
+    def _converter_quantidade_para_estoque(self, estoque):
+        """Converte quantidade da compra para a unidade do estoque."""
+        if self.unidade == estoque.unidade_medida:
+            return self.quantidade
+        
+        # Conversão entre unidades
+        try:
+            if self.unidade == 'g' and estoque.unidade_medida == 'kg':
+                return self.quantidade / 1000
+            elif self.unidade == 'kg' and estoque.unidade_medida == 'g':
+                return self.quantidade * 1000
+            else:
+                # Não é possível converter entre unidade e peso
+                raise ValueError(f"Não é possível converter {self.unidade} para {estoque.unidade_medida}")
+        except ValueError:
+            # Se não conseguir converter, manter unidade da compra no estoque
+            estoque.unidade_medida = self.unidade
+            estoque.save()
+            return self.quantidade
+
+    def _converter_preco_para_estoque(self, estoque):
+        """Converte preço da compra para a unidade do estoque."""
+        if self.unidade == estoque.unidade_medida:
+            return self.preco_unitario_centavos
+        
+        # Conversão de preços
+        try:
+            if self.unidade == 'g' and estoque.unidade_medida == 'kg':
+                return self.preco_unitario_centavos * 1000  # preço/g → preço/kg
+            elif self.unidade == 'kg' and estoque.unidade_medida == 'g':
+                return self.preco_unitario_centavos // 1000  # preço/kg → preço/g
+            else:
+                return self.preco_unitario_centavos
+        except:
+            return self.preco_unitario_centavos
 
     def _criar_historico_preco(self):
         """Cria registro no histórico de preços."""

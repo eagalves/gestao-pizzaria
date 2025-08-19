@@ -108,6 +108,12 @@ class EstoqueIngredienteForm(forms.ModelForm):
 class CompraIngredienteForm(forms.ModelForm):
     """Form para registro de compras."""
     
+    UNIDADES_CHOICES = [
+        ('g', 'Gramas (g)'),
+        ('kg', 'Quilos (kg)'),
+        ('un', 'Unidade'),
+    ]
+    
     preco_unitario_reais = forms.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -117,12 +123,34 @@ class CompraIngredienteForm(forms.ModelForm):
             'step': '0.01',
             'placeholder': '0,00'
         }),
-        label='Preço Unitário (R$)'
+        label='Preço Unitário (R$)',
+        required=False  # Será obrigatório apenas para unidades
+    )
+    
+    unidade = forms.ChoiceField(
+        choices=UNIDADES_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        }),
+        label='Unidade'
+    )
+    
+    valor_total_reais = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'placeholder': '0,00'
+        }),
+        label='Valor Total (R$)',
+        required=False  # Será obrigatório apenas para kg/g
     )
     
     class Meta:
         model = CompraIngrediente
-        fields = ['ingrediente', 'fornecedor', 'quantidade', 'data_compra', 'numero_nota', 'observacoes']
+        fields = ['ingrediente', 'fornecedor', 'quantidade', 'unidade', 'data_compra', 'numero_nota', 'observacoes']
         widgets = {
             'ingrediente': forms.Select(attrs={
                 'class': 'form-control'
@@ -159,12 +187,64 @@ class CompraIngredienteForm(forms.ModelForm):
             self.fields['ingrediente'].queryset = Ingrediente.objects.filter(pizzaria=pizzaria)
             self.fields['fornecedor'].queryset = Fornecedor.objects.filter(pizzaria=pizzaria, ativo=True)
     
+    def clean(self):
+        cleaned_data = super().clean()
+        quantidade = cleaned_data.get('quantidade')
+        unidade = cleaned_data.get('unidade')
+        preco_unitario_reais = cleaned_data.get('preco_unitario_reais')
+        valor_total_reais = cleaned_data.get('valor_total_reais')
+        
+        # Regra 1: Para unidades, quantidade deve ser inteiro
+        if quantidade and unidade == 'un':
+            if quantidade != int(quantidade):
+                raise forms.ValidationError({
+                    'quantidade': 'Para unidades, a quantidade deve ser um número inteiro.'
+                })
+        
+        # Regra 2: Validações por tipo de unidade
+        if unidade == 'un':
+            # Para unidades: preço unitário obrigatório, valor total calculado
+            if not preco_unitario_reais:
+                raise forms.ValidationError({
+                    'preco_unitario_reais': 'Preço unitário é obrigatório quando a unidade é "Unidade".'
+                })
+            if valor_total_reais:
+                raise forms.ValidationError({
+                    'valor_total_reais': 'Para unidades, o valor total é calculado automaticamente.'
+                })
+        else:
+            # Para kg/g: valor total obrigatório, preço unitário não deve ser informado
+            if preco_unitario_reais:
+                raise forms.ValidationError({
+                    'preco_unitario_reais': 'Preço unitário só deve ser informado para unidades.'
+                })
+            if not valor_total_reais:
+                raise forms.ValidationError({
+                    'valor_total_reais': 'Valor total é obrigatório para compras em kg/gramas.'
+                })
+        
+        return cleaned_data
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
         
-        # Converter preço de reais para centavos
-        preco_reais = self.cleaned_data['preco_unitario_reais']
-        instance.preco_unitario_centavos = int(preco_reais * 100)
+        # Obter dados limpos
+        quantidade = self.cleaned_data['quantidade']
+        unidade = self.cleaned_data['unidade']
+        preco_unitario_reais = self.cleaned_data.get('preco_unitario_reais', 0)
+        valor_total_reais = self.cleaned_data.get('valor_total_reais', 0)
+        
+        if unidade == 'un':
+            # Para unidades: calcular valor total automaticamente
+            instance.preco_unitario_centavos = int(preco_unitario_reais * 100)
+            instance.valor_total_centavos = int(quantidade * instance.preco_unitario_centavos)
+        else:
+            # Para kg/g: usar valor total informado, calcular preço unitário
+            instance.valor_total_centavos = int(valor_total_reais * 100)
+            if quantidade > 0:
+                instance.preco_unitario_centavos = int(instance.valor_total_centavos / quantidade)
+            else:
+                instance.preco_unitario_centavos = 0
         
         if commit:
             instance.save()

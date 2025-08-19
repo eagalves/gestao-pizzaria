@@ -92,19 +92,62 @@ class Produto(models.Model):
         
         for produto_ingrediente in self.produto_ingredientes.all():
             ingrediente = produto_ingrediente.ingrediente
-            quantidade = produto_ingrediente.quantidade
+            quantidade_produto = produto_ingrediente.quantidade
+            unidade_produto = produto_ingrediente.unidade
             
             # Buscar preço atual do ingrediente no estoque
             try:
                 estoque = ingrediente.estoque
-                preco_unitario_centavos = estoque.preco_compra_atual_centavos
-                custo_parcial = int(quantidade * preco_unitario_centavos)
+                preco_por_unidade_estoque_centavos = estoque.preco_compra_atual_centavos
+                unidade_estoque = estoque.unidade_medida
+                
+                # Converter quantidade do produto para a unidade do estoque
+                quantidade_convertida = self._converter_unidade(
+                    quantidade_produto, 
+                    unidade_produto, 
+                    unidade_estoque
+                )
+                
+                # Calcular custo: quantidade convertida × preço por unidade
+                custo_parcial = int(float(quantidade_convertida) * preco_por_unidade_estoque_centavos)
                 custo_total_centavos += custo_parcial
-            except:
-                # Se não tem estoque, usar 0
+                
+            except Exception as e:
+                # Se não tem estoque ou erro de conversão, usar 0
+                print(f"Erro ao calcular custo do ingrediente {ingrediente.nome}: {e}")
                 pass
         
         return custo_total_centavos
+
+    def _converter_unidade(self, quantidade, unidade_origem, unidade_destino):
+        """Converte quantidade de uma unidade para outra."""
+        if unidade_origem == unidade_destino:
+            return quantidade
+        
+        # Sistema simplificado: apenas kg, g e unidade
+        # Unidade NÃO é convertida para gramas - é uma medida independente
+        
+        # Se uma das unidades é "unidade", só pode converter se ambas forem "unidade"
+        if unidade_origem == 'un' or unidade_destino == 'un':
+            if unidade_origem == unidade_destino:
+                return quantidade
+            else:
+                # Não é possível converter entre unidade e peso (kg/g)
+                raise ValueError(f"Não é possível converter entre {unidade_origem} e {unidade_destino}")
+        
+        # Conversão apenas entre kg e g
+        try:
+            if unidade_origem == 'g' and unidade_destino == 'kg':
+                return quantidade / 1000  # gramas para kg
+            elif unidade_origem == 'kg' and unidade_destino == 'g':
+                return quantidade * 1000  # kg para gramas
+            else:
+                # Se chegou aqui, unidades não suportadas
+                raise ValueError(f"Conversão não suportada: {unidade_origem} → {unidade_destino}")
+                
+        except (KeyError, ZeroDivisionError, ValueError):
+            # Se não conseguir converter, lança erro
+            raise ValueError(f"Erro na conversão: {unidade_origem} → {unidade_destino}")
 
     @property
     def custo_ingredientes(self):
@@ -213,11 +256,7 @@ class ProdutoIngrediente(models.Model):
     UNIDADES_CHOICES = [
         ('g', 'Gramas (g)'),
         ('kg', 'Quilos (kg)'),
-        ('ml', 'Mililitros (ml)'),
-        ('l', 'Litros (l)'),
         ('un', 'Unidade'),
-        ('fatia', 'Fatia'),
-        ('pitada', 'Pitada'),
     ]
 
     produto = models.ForeignKey(

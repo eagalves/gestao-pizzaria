@@ -52,7 +52,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="{{ form.quantidade.id_for_label }}" class="form-label">
                                         <i class="fas fa-weight me-2"></i>Quantidade *
@@ -65,7 +65,20 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.unidade.id_for_label }}" class="form-label">
+                                        <i class="fas fa-ruler me-2"></i>Unidade *
+                                    </label>
+                                    {{ form.unidade }}
+                                    {% if form.unidade.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.unidade.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3" id="campo-preco-unitario" style="display: none;">
                                 <div class="mb-3">
                                     <label for="{{ form.preco_unitario_reais.id_for_label }}" class="form-label">
                                         <i class="fas fa-dollar-sign me-2"></i>Preço Unitário *
@@ -81,16 +94,21 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-calculator me-2"></i>Valor Total
+                                    <label for="{{ form.valor_total_reais.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calculator me-2"></i>Valor Total *
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control" id="valor-total" readonly>
+                                        {{ form.valor_total_reais }}
                                     </div>
-                                    <small class="form-text text-muted">Calculado automaticamente</small>
+                                    <small class="form-text text-muted" id="valor-total-help">Calculado automaticamente</small>
+                                    {% if form.valor_total_reais.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.valor_total_reais.errors }}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -159,25 +177,63 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const unidadeSelect = document.getElementById('{{ form.unidade.id_for_label }}');
     const quantidadeInput = document.getElementById('{{ form.quantidade.id_for_label }}');
     const precoInput = document.getElementById('{{ form.preco_unitario_reais.id_for_label }}');
-    const valorTotalInput = document.getElementById('valor-total');
+    const valorTotalInput = document.getElementById('{{ form.valor_total_reais.id_for_label }}');
+    const campoPrecoUnitario = document.getElementById('campo-preco-unitario');
+    const valorTotalHelp = document.getElementById('valor-total-help');
     const ingredienteSelect = document.getElementById('{{ form.ingrediente.id_for_label }}');
     const infoDiv = document.getElementById('info-ingrediente');
     const infoContent = document.getElementById('info-content');
+    
+    function atualizarCampos() {
+        const unidade = unidadeSelect.value;
+        
+        if (unidade === 'un') {
+            // Para unidades: mostrar preço unitário, valor total readonly
+            campoPrecoUnitario.style.display = 'block';
+            precoInput.required = true;
+            valorTotalInput.readOnly = true;
+            valorTotalInput.style.backgroundColor = '#e9ecef';
+            valorTotalHelp.textContent = 'Calculado automaticamente';
+        } else {
+            // Para kg/g: esconder preço unitário, valor total editável
+            campoPrecoUnitario.style.display = 'none';
+            precoInput.required = false;
+            precoInput.value = '';
+            valorTotalInput.readOnly = false;
+            valorTotalInput.style.backgroundColor = '';
+            valorTotalHelp.textContent = 'Digite o valor total da compra';
+        }
+        
+        calcularTotal();
+    }
 
-    // Calcular valor total
+    // Calcular valor total (apenas para unidades)
     function calcularTotal() {
         const quantidade = parseFloat(quantidadeInput.value) || 0;
         const preco = parseFloat(precoInput.value) || 0;
-        const total = quantidade * preco;
-        valorTotalInput.value = total.toFixed(2);
+        const unidade = unidadeSelect.value;
+        
+        if (unidade === 'un') {
+            // Para unidades: calcular automaticamente
+            const total = quantidade * preco;
+            valorTotalInput.value = total.toFixed(2);
+        } else {
+            // Para kg/g: usuário digita manualmente
+            if (!valorTotalInput.value) {
+                valorTotalInput.value = '';
+            }
+        }
     }
 
-    // Buscar informações do ingrediente
+    // Buscar informações do ingrediente (apenas para unidades)
     function buscarInfoIngrediente() {
         const ingredienteId = ingredienteSelect.value;
-        if (ingredienteId) {
+        const unidade = unidadeSelect.value;
+        
+        if (ingredienteId && unidade === 'un') {
             fetch(`/estoque/ajax/ingrediente/${ingredienteId}/preco/`)
                 .then(response => response.json())
                 .then(data => {
@@ -221,9 +277,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event listeners
+    unidadeSelect.addEventListener('change', function() {
+        atualizarCampos();
+        buscarInfoIngrediente();
+    });
     quantidadeInput.addEventListener('input', calcularTotal);
     precoInput.addEventListener('input', calcularTotal);
     ingredienteSelect.addEventListener('change', buscarInfoIngrediente);
+    
+    // Para kg/g: limpar valor total quando trocar quantidade (para recalcular)
+    quantidadeInput.addEventListener('input', function() {
+        const unidade = unidadeSelect.value;
+        if (unidade !== 'un') {
+            // Para kg/g, não limpar automaticamente - usuário controla
+        }
+    });
 
     // Definir data atual como padrão
     const dataInput = document.getElementById('{{ form.data_compra.id_for_label }}');
@@ -232,7 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
         dataInput.value = hoje;
     }
 
-    // Calcular total inicial
+    // Inicializar
+    atualizarCampos();
     calcularTotal();
     
     // Buscar info do ingrediente se já estiver selecionado
