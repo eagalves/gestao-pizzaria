@@ -121,6 +121,13 @@ class Command(BaseCommand):
         
         movimentacoes_criadas = []
         for compra in compras:
+            # Usar timezone.now() para evitar warning de timezone
+            data_movimentacao = timezone.now().replace(
+                year=compra.data_compra.year,
+                month=compra.data_compra.month,
+                day=compra.data_compra.day
+            )
+            
             movimentacao = MovimentacaoCaixa(
                 pizzaria=compra.ingrediente.pizzaria,
                 tipo='SAIDA',
@@ -128,10 +135,7 @@ class Command(BaseCommand):
                 descricao=f'Compra - {compra.ingrediente.nome} ({compra.fornecedor.nome if compra.fornecedor else "Fornecedor não informado"})',
                 valor_centavos=compra.valor_total_centavos,
                 forma_pagamento='DIN',  # Padrão, pode ser ajustado depois
-                data_movimentacao=timezone.datetime.combine(
-                    compra.data_compra, 
-                    timezone.now().time()
-                ),
+                data_movimentacao=data_movimentacao,
                 compra_estoque=compra
             )
             movimentacoes_criadas.append(movimentacao)
