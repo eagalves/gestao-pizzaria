@@ -16,5 +16,7 @@ urlpatterns = [
     path('despesas-operacionais/<int:despesa_id>/editar/', views.editar_despesa, name='editar_despesa'),
     path('despesas-operacionais/<int:despesa_id>/excluir/', views.excluir_despesa, name='excluir_despesa'),
     path('despesas-operacionais/<int:despesa_id>/marcar-paga/', views.marcar_despesa_paga, name='marcar_despesa_paga'),
+    
+    # Gestão de Tipos de Despesa
     path('tipos-despesa/adicionar/', views.adicionar_tipo_despesa, name='adicionar_tipo_despesa'),
 ]

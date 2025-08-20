@@ -114,6 +114,84 @@
                                             </div>
                                         {% endif %}
                                     </div>
+                                    
+                                    <!-- Recorrente -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check mt-4">
+                                            {{ form.recorrente }}
+                                            <label class="form-check-label" for="{{ form.recorrente.id_for_label }}">
+                                                {{ form.recorrente.label }}
+                                            </label>
+                                        </div>
+                                        <div class="form-text">Se esta despesa se repete mensalmente</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Campos de Recorrência (aparecem quando marcado como recorrente) -->
+                                <div id="campos-recorrencia" class="{% if not form.recorrente.value %}d-none{% endif %}">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="card-title mb-0">
+                                                <i class="fas fa-sync-alt me-2"></i>Configuração de Despesa Fixa Mensal
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>Atenção:</strong> Para despesas recorrentes, todos os campos abaixo são obrigatórios.
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <!-- Dia de Vencimento -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="{{ form.dia_vencimento_recorrente.id_for_label }}" class="form-label">
+                                                        {{ form.dia_vencimento_recorrente.label }} *
+                                                    </label>
+                                                    {{ form.dia_vencimento_recorrente }}
+                                                    {% if form.dia_vencimento_recorrente.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.dia_vencimento_recorrente.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="form-text">Dia do mês (1-31)</div>
+                                                </div>
+                                                
+                                                <!-- Data de Início -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="{{ form.data_inicio_recorrencia.id_for_label }}" class="form-label">
+                                                        {{ form.data_inicio_recorrencia.label }} *
+                                                    </label>
+                                                    {{ form.data_inicio_recorrencia }}
+                                                    {% if form.data_inicio_recorrencia.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.data_inicio_recorrencia.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="form-text">Data de início da recorrência</div>
+                                                </div>
+                                                
+                                                <!-- Data de Fim -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label for="{{ form.data_fim_recorrencia.id_for_label }}" class="form-label">
+                                                        {{ form.data_fim_recorrencia.label }}
+                                                    </label>
+                                                    {{ form.data_fim_recorrencia }}
+                                                    {% if form.data_fim_recorrencia.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {{ form.data_fim_recorrencia.errors.0 }}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="form-text">Deixe em branco para indefinido</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Como funciona:</strong> Esta despesa será gerada automaticamente todo mês no dia especificado, 
+                                                criando as despesas mensais correspondentes para o mês atual e próximos meses.
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <!-- Observações -->
@@ -179,17 +257,80 @@
 
 {% block extra_js %}
 <script>
-// Atualizar tipos de despesa quando necessário
 document.addEventListener('DOMContentLoaded', function() {
-    // Adicionar classes Bootstrap aos campos do formulário
-    const formFields = document.querySelectorAll('input, select, textarea');
-    formFields.forEach(field => {
-        if (field.classList.contains('form-control') || field.classList.contains('form-select')) {
-            if (field.hasAttribute('required')) {
-                field.classList.add('is-required');
-            }
+    // Controle dos campos de recorrência
+    const checkboxRecorrente = document.getElementById('{{ form.recorrente.id_for_label }}');
+    const camposRecorrencia = document.getElementById('campos-recorrencia');
+    
+    function toggleCamposRecorrencia() {
+        if (checkboxRecorrente.checked) {
+            camposRecorrencia.classList.remove('d-none');
+            // Marcar campos como obrigatórios
+            document.getElementById('{{ form.dia_vencimento_recorrente.id_for_label }}').required = true;
+            document.getElementById('{{ form.data_inicio_recorrencia.id_for_label }}').required = true;
+        } else {
+            camposRecorrencia.classList.add('d-none');
+            // Remover obrigatoriedade
+            document.getElementById('{{ form.dia_vencimento_recorrente.id_for_label }}').required = false;
+            document.getElementById('{{ form.data_inicio_recorrencia.id_for_label }}').required = false;
         }
-    });
+    }
+    
+    // Event listener para o checkbox
+    checkboxRecorrente.addEventListener('change', toggleCamposRecorrencia);
+    
+    // Executar na inicialização
+    toggleCamposRecorrencia();
+    
+    // Validação do dia de vencimento recorrente
+    const diaVencimentoRecorrente = document.getElementById('{{ form.dia_vencimento_recorrente.id_for_label }}');
+    if (diaVencimentoRecorrente) {
+        diaVencimentoRecorrente.addEventListener('change', function() {
+            const valor = parseInt(this.value);
+            if (valor < 1 || valor > 31) {
+                this.setCustomValidity('O dia deve estar entre 1 e 31');
+                this.classList.add('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    // Validação da data de início
+    const dataInicioRecorrencia = document.getElementById('{{ form.data_inicio_recorrencia.id_for_label }}');
+    if (dataInicioRecorrencia) {
+        dataInicioRecorrencia.addEventListener('change', function() {
+            const dataInicio = new Date(this.value);
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            if (dataInicio < hoje) {
+                this.setCustomValidity('A data de início deve ser hoje ou uma data futura');
+                this.classList.add('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    // Validação da data de fim
+    const dataFimRecorrencia = document.getElementById('{{ form.data_fim_recorrencia.id_for_label }}');
+    if (dataFimRecorrencia) {
+        dataFimRecorrencia.addEventListener('change', function() {
+            const dataFim = new Date(this.value);
+            const dataInicio = new Date(dataInicioRecorrencia.value);
+            
+            if (dataFim < dataInicio) {
+                this.setCustomValidity('A data de fim deve ser posterior à data de início');
+                this.classList.add('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

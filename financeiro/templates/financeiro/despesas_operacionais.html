@@ -29,18 +29,23 @@
                                 <option value="todas" {% if filtro_status == 'todas' %}selected{% endif %}>Todas as despesas</option>
                                 <option value="pendentes" {% if filtro_status == 'pendentes' %}selected{% endif %}>Pendentes</option>
                                 <option value="pagas" {% if filtro_status == 'pagas' %}selected{% endif %}>Pagas</option>
-                                <option value="atrasadas" {% if filtro_status == 'atrasadas' %}selected{% endif %}>Em atraso</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="data_inicio" class="form-label">Data Início</label>
-                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
-                                   value="{{ data_inicio }}">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="todas" {% if filtro_tipo == 'todas' %}selected{% endif %}>Todos os tipos</option>
+                                <option value="FIXA" {% if filtro_tipo == 'FIXA' %}selected{% endif %}>Fixa</option>
+                                <option value="VARIAVEL" {% if filtro_tipo == 'VARIAVEL' %}selected{% endif %}>Variável</option>
+                            </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="data_fim" class="form-label">Data Fim</label>
-                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
-                                   value="{{ data_fim }}">
+                            <label for="recorrente" class="form-label">Recorrência</label>
+                            <select class="form-select" id="recorrente" name="recorrente">
+                                <option value="todas" {% if filtro_recorrente == 'todas' %}selected{% endif %}>Todas</option>
+                                <option value="recorrentes" {% if filtro_recorrente == 'recorrentes' %}selected{% endif %}>Fixas Mensais</option>
+                                <option value="nao_recorrentes" {% if filtro_recorrente == 'nao_recorrentes' %}selected{% endif %}>Não Recorrentes</option>
+                            </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
@@ -103,13 +108,13 @@
                                         <th>Valor</th>
                                         <th>Vencimento</th>
                                         <th>Status</th>
-                                        <th>Forma Pagamento</th>
+                                        <th>Recorrente</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for despesa in despesas %}
-                                        <tr class="{% if despesa.em_atraso %}table-danger{% elif not despesa.pago %}table-warning{% endif %}">
+                                        <tr class="{% if despesa.em_atraso %}table-warning{% endif %}">
                                             <td>
                                                 <strong>{{ despesa.descricao }}</strong>
                                                 <br><small class="text-muted">{{ despesa.tipo_despesa.nome }}</small>
@@ -126,18 +131,12 @@
                                                 <span class="{% if despesa.em_atraso %}text-danger fw-bold{% endif %}">
                                                     {{ despesa.data_vencimento|date:"d/m/Y" }}
                                                 </span>
-                                                {% if despesa.em_atraso %}
-                                                    <br><small class="text-danger">Em atraso!</small>
-                                                {% endif %}
                                             </td>
                                             <td>
                                                 {% if despesa.pago %}
                                                     <span class="badge bg-success">
-                                                        <i class="fas fa-check me-1"></i>Pago
+                                                        <i class="fas fa-check me-1"></i>Paga
                                                     </span>
-                                                    {% if despesa.data_pagamento %}
-                                                        <br><small class="text-muted">{{ despesa.data_pagamento|date:"d/m/Y" }}</small>
-                                                    {% endif %}
                                                 {% else %}
                                                     <span class="badge bg-warning">
                                                         <i class="fas fa-clock me-1"></i>Pendente
@@ -145,7 +144,16 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <small>{{ despesa.get_forma_pagamento_display }}</small>
+                                                {% if despesa.recorrente %}
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-sync-alt me-1"></i>Fixa Mensal
+                                                    </span>
+                                                    <br><small class="text-muted">Dia {{ despesa.dia_vencimento_recorrente }}</small>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-calendar me-1"></i>Única
+                                                    </span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
@@ -153,12 +161,14 @@
                                                        class="btn btn-sm btn-outline-primary" title="Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    
                                                     {% if not despesa.pago %}
                                                         <a href="{% url 'financeiro:marcar_despesa_paga' despesa.id %}" 
                                                            class="btn btn-sm btn-outline-success" title="Marcar como Paga">
                                                             <i class="fas fa-check"></i>
                                                         </a>
                                                     {% endif %}
+                                                    
                                                     <a href="{% url 'financeiro:excluir_despesa' despesa.id %}" 
                                                        class="btn btn-sm btn-outline-danger" title="Excluir"
                                                        onclick="return confirm('Tem certeza que deseja excluir esta despesa?')">

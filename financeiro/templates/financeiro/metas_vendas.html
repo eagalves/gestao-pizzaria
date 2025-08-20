@@ -78,15 +78,7 @@
                             <h2>
                                 {% if metas %}
                                     {% for meta in metas|slice:":1" %}
-                                        {% with realizacao=meta.realizacao %}
-                                            {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                                {{ realizacao.percentual_receita|floatformat:1 }}%
-                                            {% elif meta.meta.tipo_meta == 'QUANTIDADE' %}
-                                                {{ realizacao.percentual_quantidade|floatformat:1 }}%
-                                            {% else %}
-                                                {{ realizacao.percentual_ticket|floatformat:1 }}%
-                                            {% endif %}
-                                        {% endwith %}
+                                        {{ meta.percentual_realizacao|floatformat:1 }}%
                                     {% endfor %}
                                 {% else %}
                                     0%
@@ -125,11 +117,10 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Meta</th>
-                                        <th>Tipo</th>
-                                        <th>Período</th>
-                                        <th>Meta Definida</th>
-                                        <th>Realizado</th>
+                                        <th>Mês</th>
+                                        <th>Meta de Receita</th>
+                                        <th>Meta de Ticket Médio</th>
+                                        <th>Receita Realizada</th>
                                         <th>Realização</th>
                                         <th>Status</th>
                                         <th>Ações</th>
@@ -139,113 +130,62 @@
                                     {% for meta in metas %}
                                         <tr>
                                             <td>
-                                                <strong>{{ meta.meta.nome }}</strong>
-                                                {% if meta.meta.categoria %}
-                                                    <br><small class="text-muted">{{ meta.meta.categoria.nome }}</small>
-                                                {% endif %}
+                                                <strong>
+                                                    {% if meta.mes == 1 %}Janeiro
+                                                    {% elif meta.mes == 2 %}Fevereiro
+                                                    {% elif meta.mes == 3 %}Março
+                                                    {% elif meta.mes == 4 %}Abril
+                                                    {% elif meta.mes == 5 %}Maio
+                                                    {% elif meta.mes == 6 %}Junho
+                                                    {% elif meta.mes == 7 %}Julho
+                                                    {% elif meta.mes == 8 %}Agosto
+                                                    {% elif meta.mes == 9 %}Setembro
+                                                    {% elif meta.mes == 10 %}Outubro
+                                                    {% elif meta.mes == 11 %}Novembro
+                                                    {% elif meta.mes == 12 %}Dezembro
+                                                    {% endif %}
+                                                </strong>
                                             </td>
                                             <td>
-                                                <span class="badge bg-info">{{ meta.meta.get_tipo_meta_display }}</span>
-                                            </td>
-                                            <td>{{ meta.meta.mes|stringformat:"02d" }}/{{ meta.meta.ano }}</td>
-                                            <td>
-                                                {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                                    R$ {{ meta.meta.meta_receita|floatformat:2 }}
-                                                {% elif meta.meta.tipo_meta == 'QUANTIDADE' %}
-                                                    {{ meta.meta.meta_quantidade }} pedidos
-                                                {% else %}
-                                                    R$ {{ meta.meta.meta_ticket_medio|floatformat:2 }}
-                                                {% endif %}
+                                                R$ {{ meta.meta_receita|floatformat:2 }}
                                             </td>
                                             <td>
-                                                {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                                    R$ {{ meta.realizacao.receita_realizada|floatformat:2 }}
-                                                {% elif meta.meta.tipo_meta == 'QUANTIDADE' %}
-                                                    {{ meta.realizacao.quantidade_realizada }} pedidos
-                                                {% else %}
-                                                    R$ {{ meta.realizacao.ticket_medio_realizado|floatformat:2 }}
-                                                {% endif %}
+                                                R$ {{ meta.meta_ticket_medio|floatformat:2 }}
                                             </td>
                                             <td>
-                                                {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                                    {% with percentual=meta.realizacao.percentual_receita %}
-                                                        <div class="progress" style="height: 20px;">
-                                                            <div class="progress-bar {% if percentual >= 100 %}bg-success{% elif percentual >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                                                 style="width: {{ percentual|default:0 }}%">
-                                                                {{ percentual|floatformat:1 }}%
-                                                            </div>
-                                                        </div>
-                                                    {% endwith %}
-                                                {% elif meta.meta.tipo_meta == 'QUANTIDADE' %}
-                                                    {% with percentual=meta.realizacao.percentual_quantidade %}
-                                                        <div class="progress" style="height: 20px;">
-                                                            <div class="progress-bar {% if percentual >= 100 %}bg-success{% elif percentual >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                                                 style="width: {{ percentual|default:0 }}%">
-                                                                {{ percentual|floatformat:1 }}%
-                                                            </div>
-                                                        </div>
-                                                    {% endwith %}
-                                                {% else %}
-                                                    {% with percentual=meta.realizacao.percentual_ticket %}
-                                                        <div class="progress" style="height: 20px;">
-                                                            <div class="progress-bar {% if percentual >= 100 %}bg-success{% elif percentual >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
-                                                                 style="width: {{ percentual|default:0 }}%">
-                                                                {{ percentual|floatformat:1 }}%
-                                                            </div>
-                                                        </div>
-                                                    {% endwith %}
-                                                {% endif %}
+                                                R$ {{ meta.receita_realizada|floatformat:2 }}
                                             </td>
                                             <td>
-                                                {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                                    {% with percentual=meta.realizacao.percentual_receita %}
-                                                        {% if percentual >= 100 %}
-                                                            <span class="badge bg-success">Atingida</span>
-                                                        {% endif %}
-                                                        {% if percentual >= 80 and percentual < 100 %}
-                                                            <span class="badge bg-warning">Em Andamento</span>
-                                                        {% endif %}
-                                                        {% if percentual < 80 %}
-                                                            <span class="badge bg-danger">Abaixo da Meta</span>
-                                                        {% endif %}
-                                                    {% endwith %}
-                                                {% elif meta.meta.tipo_meta == 'QUANTIDADE' %}
-                                                    {% with percentual=meta.realizacao.percentual_quantidade %}
-                                                        {% if percentual >= 100 %}
-                                                            <span class="badge bg-success">Atingida</span>
-                                                        {% endif %}
-                                                        {% if percentual >= 80 and percentual < 100 %}
-                                                            <span class="badge bg-warning">Em Andamento</span>
-                                                        {% endif %}
-                                                        {% if percentual < 80 %}
-                                                            <span class="badge bg-danger">Abaixo da Meta</span>
-                                                        {% endif %}
-                                                    {% endwith %}
-                                                {% else %}
-                                                    {% with percentual=meta.realizacao.percentual_ticket %}
-                                                        {% if percentual >= 100 %}
-                                                            <span class="badge bg-success">Atingida</span>
-                                                        {% endif %}
-                                                        {% if percentual >= 80 and percentual < 100 %}
-                                                            <span class="badge bg-warning">Em Andamento</span>
-                                                        {% endif %}
-                                                        {% if percentual < 80 %}
-                                                            <span class="badge bg-danger">Abaixo da Meta</span>
-                                                        {% endif %}
-                                                    {% endwith %}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{% url 'admin:financeiro_metavenda_change' meta.meta.id %}" 
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <button type="button" class="btn btn-sm btn-outline-info" 
-                                                            onclick="verDetalhes({{ meta.meta.id }})">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar {% if meta.percentual_realizacao >= 100 %}bg-success{% elif meta.percentual_realizacao >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ meta.percentual_realizacao|floatformat:0 }}%"
+                                                         aria-valuenow="{{ meta.percentual_realizacao|floatformat:0 }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                        {{ meta.percentual_realizacao|floatformat:1 }}%
+                                                    </div>
                                                 </div>
+                                            </td>
+                                            <td>
+                                                {% if meta.status == 'ATINGIDA' %}
+                                                    <span class="badge bg-success">Atingida</span>
+                                                {% elif meta.status == 'EM_ANDAMENTO' %}
+                                                    <span class="badge bg-warning">Em Andamento</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Atrasada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'admin:financeiro_metavenda_change' meta.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>Nenhuma meta encontrada para o período selecionado.
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -279,13 +219,25 @@
                                 <h6 class="text-primary">📊 Análise de Performance</h6>
                                 <ul class="list-unstyled">
                                     {% for meta in metas %}
-                                        {% if meta.meta.tipo_meta == 'RECEITA' %}
-                                            <li>
-                                                <i class="fas fa-{% if meta.realizacao.percentual_receita >= 100 %}check-circle text-success{% elif meta.realizacao.percentual_receita >= 80 %}exclamation-triangle text-warning{% else %}times-circle text-danger{% endif %} me-2"></i>
-                                                <strong>{{ meta.meta.nome }}:</strong> 
-                                                {{ meta.realizacao.percentual_receita|floatformat:1 }}% da meta de receita
-                                            </li>
-                                        {% endif %}
+                                        <li>
+                                            <i class="fas fa-{% if meta.percentual_realizacao >= 100 %}check-circle text-success{% elif meta.percentual_realizacao >= 80 %}exclamation-triangle text-warning{% else %}times-circle text-danger{% endif %} me-2"></i>
+                                            <strong>
+                                                {% if meta.mes == 1 %}Janeiro
+                                                {% elif meta.mes == 2 %}Fevereiro
+                                                {% elif meta.mes == 3 %}Março
+                                                {% elif meta.mes == 4 %}Abril
+                                                {% elif meta.mes == 5 %}Maio
+                                                {% elif meta.mes == 6 %}Junho
+                                                {% elif meta.mes == 7 %}Julho
+                                                {% elif meta.mes == 8 %}Agosto
+                                                {% elif meta.mes == 9 %}Setembro
+                                                {% elif meta.mes == 10 %}Outubro
+                                                {% elif meta.mes == 11 %}Novembro
+                                                {% elif meta.mes == 12 %}Dezembro
+                                                {% endif %}:
+                                            </strong> 
+                                            {{ meta.percentual_realizacao|floatformat:1 }}% da meta de receita
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             </div>

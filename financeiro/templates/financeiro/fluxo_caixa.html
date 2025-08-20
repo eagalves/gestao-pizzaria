@@ -277,9 +277,9 @@ const ctxEntradas = document.getElementById('graficoEntradas').getContext('2d');
 const graficoEntradas = new Chart(ctxEntradas, {
     type: 'doughnut',
     data: {
-        labels: [{% for entrada in entradas_por_pagamento %}'{{ entrada.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        labels: [{% for entrada in entradas_por_pagamento %}'{{ entrada.forma_pagamento }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
         datasets: [{
-            data: [{% for entrada in entradas_por_pagamento %}{{ entrada.1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            data: [{% for entrada in entradas_por_pagamento %}{{ entrada.total|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
             backgroundColor: [
                 'rgba(40, 167, 69, 0.8)',
                 'rgba(23, 162, 184, 0.8)',
@@ -304,10 +304,10 @@ const ctxSaidas = document.getElementById('graficoSaidas').getContext('2d');
 const graficoSaidas = new Chart(ctxSaidas, {
     type: 'bar',
     data: {
-        labels: [{% for saida in saidas_por_origem %}'{{ saida.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        labels: [{% for saida in saidas_por_origem %}'{{ saida.origem }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
         datasets: [{
             label: 'Valor (R$)',
-            data: [{% for saida in saidas_por_origem %}{{ saida.1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            data: [{% for saida in saidas_por_origem %}{{ saida.total|floatformat:2 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
             backgroundColor: 'rgba(220, 53, 69, 0.8)'
         }]
     },

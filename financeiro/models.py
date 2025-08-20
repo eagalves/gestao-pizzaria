@@ -23,7 +23,7 @@ class TipoDespesa(models.Model):
 
 
 class DespesaOperacional(models.Model):
-    """Despesas operacionais da pizzaria."""
+    """Despesas operacionais da pizzaria (incluindo fixas mensais)."""
     
     TIPO_DESPESA_CHOICES = [
         ('FIXA', 'Despesa Fixa'),
@@ -67,6 +67,28 @@ class DespesaOperacional(models.Model):
     pago = models.BooleanField(default=False)
     observacoes = models.TextField(blank=True)
     
+    # Campos para despesas recorrentes/fixas mensais
+    recorrente = models.BooleanField(
+        default=False, 
+        help_text="Se esta despesa se repete mensalmente"
+    )
+    dia_vencimento_recorrente = models.IntegerField(
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        help_text="Dia do mês para vencimento (1-31) - apenas para despesas recorrentes"
+    )
+    data_inicio_recorrencia = models.DateField(
+        null=True, 
+        blank=True,
+        help_text="Data de início da recorrência mensal"
+    )
+    data_fim_recorrencia = models.DateField(
+        null=True, 
+        blank=True,
+        help_text="Data de fim da recorrência (deixe em branco para indefinido)"
+    )
+    
     # Controle
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
@@ -77,6 +99,8 @@ class DespesaOperacional(models.Model):
         ordering = ['-data_vencimento']
     
     def __str__(self):
+        if self.recorrente:
+            return f"{self.descricao} - R$ {self.valor:.2f} (Recorrente - Dia {self.dia_vencimento_recorrente})"
         return f"{self.descricao} - R$ {self.valor:.2f} ({self.data_vencimento})"
     
     @property
@@ -91,15 +115,98 @@ class DespesaOperacional(models.Model):
             return False
         return self.data_vencimento < timezone.now().date()
     
+    @property
+    def despesa_fixa_mensal(self):
+        """Verifica se é uma despesa fixa mensal (recorrente)."""
+        return self.recorrente and self.tipo == 'FIXA'
+    
     def marcar_como_paga(self, data_pagamento=None):
         """Marca despesa como paga."""
         self.pago = True
         self.data_pagamento = data_pagamento or timezone.now().date()
         self.save()
+    
+    def gerar_despesa_mensal(self, mes, ano):
+        """Gera uma despesa mensal para o mês/ano especificado (apenas para despesas recorrentes)."""
+        if not self.recorrente:
+            return None
+            
+        from datetime import date, timedelta
+        
+        # Calcular data de vencimento
+        try:
+            data_vencimento = date(ano, mes, self.dia_vencimento_recorrente)
+        except ValueError:
+            # Se o dia não existe no mês (ex: 31 em fevereiro), usar o último dia do mês
+            if mes == 12:
+                data_vencimento = date(ano + 1, 1, 1) - timedelta(days=1)
+            else:
+                data_vencimento = date(ano, mes + 1, 1) - timedelta(days=1)
+        
+        # Verificar se já existe despesa para este mês/ano
+        if DespesaOperacional.objects.filter(
+            pizzaria=self.pizzaria,
+            descricao__icontains=self.descricao,
+            data_vencimento__year=ano,
+            data_vencimento__month=mes,
+            recorrente=False  # Apenas despesas mensais geradas
+        ).exists():
+            return None  # Já existe despesa para este mês
+        
+        # Criar nova despesa mensal
+        despesa_mensal = DespesaOperacional.objects.create(
+            pizzaria=self.pizzaria,
+            tipo_despesa=self.tipo_despesa,
+            descricao=f"{self.descricao} ({mes:02d}/{ano})",
+            valor_centavos=self.valor_centavos,
+            tipo='FIXA',
+            forma_pagamento=self.forma_pagamento,
+            data_vencimento=data_vencimento,
+            observacoes=f"Gerada automaticamente da despesa fixa mensal: {self.descricao}",
+            recorrente=False,  # Esta é a despesa mensal, não a recorrente
+            dia_vencimento_recorrente=None,
+            data_inicio_recorrencia=None,
+            data_fim_recorrencia=None
+        )
+        
+        return despesa_mensal
+    
+    def gerar_despesas_pendentes(self):
+        """Gera despesas mensais para meses pendentes (apenas para despesas recorrentes)."""
+        if not self.recorrente:
+            return []
+            
+        from datetime import date, timedelta
+        
+        hoje = date.today()
+        mes_atual = hoje.month
+        ano_atual = hoje.year
+        
+        # Gerar despesas para o mês atual e próximos 2 meses
+        despesas_criadas = []
+        for i in range(3):
+            mes = mes_atual + i
+            ano = ano_atual
+            
+            # Ajustar mês e ano se passar de 12
+            if mes > 12:
+                mes -= 12
+                ano += 1
+            
+            # Verificar se está dentro do período de vigência
+            if self.data_fim_recorrencia and date(ano, mes, 1) > self.data_fim_recorrencia:
+                continue
+            
+            if date(ano, mes, 1) >= self.data_inicio_recorrencia:
+                despesa = self.gerar_despesa_mensal(mes, ano)
+                if despesa:
+                    despesas_criadas.append(despesa)
+        
+        return despesas_criadas
 
 
 class MovimentacaoCaixa(models.Model):
-    """Controle de entradas e saídas do caixa."""
+    """Movimentações de caixa da pizzaria."""
     
     TIPO_CHOICES = [
         ('ENTRADA', 'Entrada'),
@@ -107,52 +214,30 @@ class MovimentacaoCaixa(models.Model):
     ]
     
     ORIGEM_CHOICES = [
-        ('VENDA', 'Venda (Pedido)'),
-        ('DESPESA', 'Despesa Operacional'),
+        ('VENDA', 'Venda'),
         ('COMPRA', 'Compra de Estoque'),
-        ('AJUSTE', 'Ajuste Manual'),
+        ('DESPESA', 'Despesa Operacional'),
         ('OUTROS', 'Outros'),
-    ]
-    
-    FORMA_PAGAMENTO_CHOICES = [
-        ('DIN', 'Dinheiro'),
-        ('PIX', 'Pix'),
-        ('TED', 'TED/DOC'),
-        ('CC', 'Cartão Crédito'),
-        ('CD', 'Cartão Débito'),
-        ('BOL', 'Boleto'),
-        ('DEB', 'Débito Automático'),
     ]
     
     pizzaria = models.ForeignKey(
         Pizzaria,
         on_delete=models.CASCADE,
-        related_name="movimentacoes_caixa"
+        related_name="movimentacoes"
     )
-    
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
-    origem = models.CharField(max_length=10, choices=ORIGEM_CHOICES)
+    origem = models.CharField(max_length=20, choices=ORIGEM_CHOICES)
     descricao = models.CharField(max_length=200)
     
     # Valor em centavos
-    valor_centavos = models.IntegerField(
-        validators=[MinValueValidator(1)],
-        help_text="Valor em centavos (ex: 5500 = R$ 55,00)"
-    )
+    valor_centavos = models.IntegerField()
     
-    forma_pagamento = models.CharField(max_length=3, choices=FORMA_PAGAMENTO_CHOICES)
-    data_movimentacao = models.DateTimeField(default=timezone.now)
+    forma_pagamento = models.CharField(max_length=3, choices=DespesaOperacional.FORMA_PAGAMENTO_CHOICES)
+    data_movimentacao = models.DateTimeField()
     
-    # Referências opcionais
+    # Relacionamentos opcionais
     pedido = models.ForeignKey(
         'pedidos.Pedido',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="movimentacoes"
-    )
-    despesa = models.ForeignKey(
-        DespesaOperacional,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -165,8 +250,13 @@ class MovimentacaoCaixa(models.Model):
         blank=True,
         related_name="movimentacoes"
     )
-    
-    observacoes = models.TextField(blank=True)
+    despesa = models.ForeignKey(
+        DespesaOperacional,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentacoes"
+    )
     
     # Controle
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -178,67 +268,38 @@ class MovimentacaoCaixa(models.Model):
     
     def __str__(self):
         sinal = '+' if self.tipo == 'ENTRADA' else '-'
-        return f"{sinal}R$ {self.valor:.2f} - {self.descricao} ({self.data_movimentacao.strftime('%d/%m/%Y')})"
+        return f"{sinal}R$ {self.valor:.2f} - {self.descricao}"
     
     @property
     def valor(self):
         """Retorna valor em reais."""
         return self.valor_centavos / 100
-    
-    @property
-    def valor_com_sinal(self):
-        """Retorna valor com sinal (+ para entrada, - para saída)."""
-        valor = self.valor
-        return valor if self.tipo == 'ENTRADA' else -valor
 
 
 class MetaVenda(models.Model):
-    """Metas de vendas mensais."""
-    
-    TIPO_META_CHOICES = [
-        ('RECEITA', 'Meta de Receita'),
-        ('QUANTIDADE', 'Meta de Quantidade'),
-        ('TICKET', 'Meta de Ticket Médio'),
-    ]
+    """Metas de vendas mensais da pizzaria."""
     
     pizzaria = models.ForeignKey(
         Pizzaria,
         on_delete=models.CASCADE,
-        related_name="metas_vendas"
+        related_name="metas_venda"
+    )
+    ano = models.IntegerField()
+    mes = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
     
-    nome = models.CharField(max_length=100)
-    tipo_meta = models.CharField(max_length=12, choices=TIPO_META_CHOICES)
-    
-    # Valores das metas
+    # Meta de receita em centavos
     meta_receita_centavos = models.IntegerField(
-        default=0,
+        validators=[MinValueValidator(1)],
         help_text="Meta de receita em centavos"
     )
-    meta_quantidade = models.IntegerField(
-        default=0,
-        help_text="Meta de quantidade de pedidos"
-    )
+    
+    # Meta de ticket médio em centavos
     meta_ticket_medio_centavos = models.IntegerField(
-        default=0,
+        validators=[MinValueValidator(1)],
         help_text="Meta de ticket médio em centavos"
     )
-    
-    # Período
-    mes = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
-    ano = models.IntegerField(validators=[MinValueValidator(2020)])
-    
-    # Categoria específica (opcional)
-    categoria = models.ForeignKey(
-        'produtos.CategoriaProduto',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="metas"
-    )
-    
-    ativo = models.BooleanField(default=True)
-    observacoes = models.TextField(blank=True)
     
     # Controle
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -246,13 +307,12 @@ class MetaVenda(models.Model):
     
     class Meta:
         verbose_name = "Meta de Venda"
-        verbose_name_plural = "Metas de Vendas"
-        unique_together = ('pizzaria', 'nome', 'mes', 'ano')
+        verbose_name_plural = "Metas de Venda"
+        unique_together = ['pizzaria', 'ano', 'mes']
         ordering = ['-ano', '-mes']
     
     def __str__(self):
-        categoria_str = f" - {self.categoria.nome}" if self.categoria else ""
-        return f"{self.nome} ({self.mes:02d}/{self.ano}){categoria_str}"
+        return f"Meta {self.mes:02d}/{self.ano} - R$ {self.meta_receita:.2f}"
     
     @property
     def meta_receita(self):
