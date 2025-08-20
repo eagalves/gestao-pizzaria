@@ -568,3 +568,164 @@ Cliente.objects.create(
 ---
 
 *Lembre-se: o objetivo é APRENDER! Não tenha pressa, entenda cada passo antes de prosseguir.*
+
+Vou analisar o sistema atual para entender melhor a estrutura e depois descrever como seria a área financeira da pizzaria.
+Ran tool
+Ran tool
+Ran tool
+Vou examinar os modelos diretamente para entender a estrutura atual:
+Ran tool
+Ran tool
+Ran tool
+Ran tool
+Agora vou examinar as views do estoque para entender melhor os relatórios existentes:
+Ran tool
+Agora vou criar um plano para a área financeira da pizzaria:
+Ran tool
+Baseado na análise do seu sistema atual, vou descrever como seria a área financeira da pizzaria. Observei que você já tem uma base sólida com:
+
+## **Estrutura Atual do Sistema**
+- **Estoque**: Controle completo de ingredientes, fornecedores, compras e custos [[memory:6553120]]
+- **Produtos**: Cálculo automático de custos baseado nos ingredientes
+- **Pedidos**: Sistema de pedidos com status "ENTREGUE" (que são suas vendas)
+- **Clientes**: Base de clientes com histórico de compras
+
+## **Área Financeira Proposta**
+
+### **1. Módulo de Receitas e Vendas** 📊
+```
+Funcionalidades:
+• Dashboard de vendas diárias/mensais/anuais
+• Análise de vendas por produto, categoria e período
+• Ticket médio por cliente e por período
+• Produtos mais vendidos e menos vendidos
+• Análise de sazonalidade
+• Metas de vendas vs. realizado
+```
+
+### **2. Módulo de Custos e Despesas** 💰
+```
+Funcionalidades:
+• Custos de ingredientes (já implementado)
+• Despesas fixas (aluguel, energia, água, internet, funcionários)
+• Despesas variáveis (delivery, embalagens, marketing)
+• Controle de impostos e taxas
+• Análise de custos por produto vs. preço de venda
+• Relatório de margem de contribuição
+```
+
+### **3. Módulo de Fluxo de Caixa** 💸
+```
+Funcionalidades:
+• Entradas: vendas por forma de pagamento (PIX, dinheiro, cartão)
+• Saídas: compras de estoque + despesas operacionais
+• Saldo diário/mensal
+• Projeções de fluxo de caixa
+• Controle de contas a pagar e receber
+• Conciliação bancária
+```
+
+### **4. Módulo de Análise Financeira** 📈
+```
+Funcionalidades:
+• DRE (Demonstração do Resultado do Exercício) simplificada
+• Indicadores: ROI, margem líquida, ponto de equilíbrio
+• Análise ABC de produtos (mais lucrativos)
+• Comparativo mensal/anual
+• Alertas de performance (vendas baixas, custos altos)
+```
+
+### **5. Módulo de Controle de Estoque Financeiro** 📦
+```
+Funcionalidades:
+• Valor total do estoque em tempo real
+• Análise de giro de estoque
+• Produtos com baixa rotatividade
+• Impacto financeiro de desperdícios
+• Previsão de compras baseada em vendas
+```
+Ran tool
+## **Relatórios Financeiros Essenciais**
+
+### **📊 Dashboard Executivo**
+- **Receita do Dia/Mês**: Total de pedidos entregues
+- **Custos do Período**: Compras + despesas operacionais  
+- **Lucro Bruto**: Receita - Custos diretos
+- **Margem %**: (Lucro ÷ Receita) × 100
+- **Pedidos por Status**: Acompanhamento operacional
+- **Top 5 Produtos**: Mais vendidos e mais lucrativos
+
+### **💰 Relatório de Rentabilidade por Produto**
+```
+Para cada produto mostrar:
+• Preço de Venda vs. Custo dos Ingredientes
+• Margem de Contribuição (R$ e %)
+• Volume de Vendas no período
+• Receita Total gerada
+• Lucro Total por produto
+• Ranking de lucratividade
+```
+
+### **📈 Análise de Performance Mensal**
+- **Evolução das Vendas**: Comparativo mês a mês
+- **Análise de Custos**: Variação dos custos de ingredientes
+- **Eficiência Operacional**: Ticket médio, tempo de preparo
+- **Análise de Clientes**: Novos vs. recorrentes, frequência
+- **Sazonalidade**: Identificar padrões de demanda
+
+## **Implementação Sugerida**
+
+### **Fase 1 - Base Financeira** 🏗️
+1. **Criar app `financeiro`** com modelos:
+   - `DespesaOperacional` (aluguel, funcionários, energia)
+   - `MovimentacaoCaixa` (entradas e saídas)
+   - `MetaVenda` (metas mensais por categoria)
+
+2. **Integrar com dados existentes**:
+   - Pedidos entregues = Receitas
+   - Compras de ingredientes = Custos diretos
+   - Calcular margem por produto automaticamente
+
+### **Fase 2 - Relatórios e Dashboards** 📊
+1. **Dashboard financeiro principal**
+2. **Relatórios de rentabilidade**  
+3. **Análise de fluxo de caixa**
+4. **Indicadores de performance**
+
+### **Fase 3 - Análises Avançadas** 🎯
+1. **Previsões de vendas**
+2. **Otimização de cardápio**
+3. **Análise de preços competitivos**
+4. **Controle orçamentário**
+
+## **Benefícios Esperados**
+
+✅ **Visibilidade Total**: Saber exatamente quanto ganha e gasta  
+✅ **Decisões Baseadas em Dados**: Quais produtos manter/remover  
+✅ **Controle de Custos**: Identificar onde economizar  
+✅ **Otimização de Preços**: Ajustar margens por produto  
+✅ **Planejamento**: Projeções e metas realistas  
+✅ **Competitividade**: Entender sua posição no mercado  
+Ran tool
+## **Ideias Adicionais Específicas para Pizzaria**
+
+### **🍕 Análises Específicas do Negócio**
+- **Análise por Horário**: Identificar picos de vendas (almoço, jantar, madrugada)
+- **Análise por Dia da Semana**: Padrões de consumo (fim de semana vs. dias úteis)
+- **Análise de Delivery vs. Balcão**: Rentabilidade por canal
+- **Controle de Desperdício**: Ingredientes vencidos, sobras, devoluções
+
+### **📱 Integrações Futuras**
+- **Apps de Delivery**: Integrar custos das plataformas (iFood, Uber Eats)
+- **Maquininhas de Cartão**: Importar vendas automaticamente
+- **Sistemas de PDV**: Sincronização em tempo real
+
+### **🎯 KPIs Específicos**
+- **Custo por Pizza**: Ingredientes + mão de obra + overhead
+- **Tempo vs. Lucro**: Produtos que demoram muito vs. margem
+- **Fidelização**: Valor vitalício do cliente (LTV)
+- **Eficiência da Cozinha**: Produtividade por funcionário
+
+Seu sistema já tem uma base muito sólida! A área financeira seria uma evolução natural que transformaria os dados que você já coleta em insights poderosos para tomar decisões estratégicas e aumentar a lucratividade da pizzaria.
+
+Gostaria que eu detalhe algum módulo específico ou comece a implementação de alguma funcionalidade?

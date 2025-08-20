@@ -1,0 +1,275 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+{% load static %}
+
+{% block title %}Dashboard Financeiro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2>Dashboard Financeiro - {{ mes_atual }}</h2>
+            
+            <!-- Cards de Resumo -->
+            <div class="row mb-4">
+                <!-- Receita Hoje -->
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Receita Hoje</h6>
+                                    <h3>R$ {{ receita_hoje|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-cash-register fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Receita do Mês -->
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Receita do Mês</h6>
+                                    <h3>R$ {{ receita_mes|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Custos do Mês -->
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Custos do Mês</h6>
+                                    <h3>R$ {{ custo_mes|floatformat:2 }}</h3>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-shopping-cart fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lucro do Mês -->
+                <div class="col-md-3">
+                    <div class="card {% if lucro_mes >= 0 %}bg-info{% else %}bg-danger{% endif %} text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-title">Lucro do Mês</h6>
+                                    <h3>R$ {{ lucro_mes|floatformat:2 }}</h3>
+                                    <small>Margem: {{ margem_mes|floatformat:1 }}%</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas {% if lucro_mes >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %} fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Segunda linha de cards -->
+            <div class="row mb-4">
+                <!-- Pedidos Hoje -->
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-primary">Pedidos Hoje</h5>
+                            <h2 class="text-primary">{{ pedidos_hoje }}</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pedidos do Mês -->
+                <div class="col-md-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-success">Pedidos do Mês</h5>
+                            <h2 class="text-success">{{ pedidos_mes }}</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ticket Médio -->
+                <div class="col-md-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-info">Ticket Médio</h5>
+                            <h2 class="text-info">R$ {{ ticket_medio_mes|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Despesas em Atraso -->
+                <div class="col-md-3">
+                    <div class="card border-{% if despesas_atraso > 0 %}danger{% else %}secondary{% endif %}">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-{% if despesas_atraso > 0 %}danger{% else %}secondary{% endif %}">Despesas em Atraso</h5>
+                            <h2 class="text-{% if despesas_atraso > 0 %}danger{% else %}secondary{% endif %}">{{ despesas_atraso }}</h2>
+                            {% if despesas_atraso > 0 %}
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Requer atenção
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Conteúdo Principal -->
+            <div class="row">
+                <!-- Movimentações Recentes -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-exchange-alt"></i> Movimentações Recentes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if movimentacoes_recentes %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Descrição</th>
+                                                <th>Tipo</th>
+                                                <th>Valor</th>
+                                                <th>Forma</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for mov in movimentacoes_recentes %}
+                                                <tr>
+                                                    <td>{{ mov.data_movimentacao|date:"d/m H:i" }}</td>
+                                                    <td>{{ mov.descricao }}</td>
+                                                    <td>
+                                                        <span class="badge {% if mov.tipo == 'ENTRADA' %}badge-success{% else %}badge-danger{% endif %}">
+                                                            {{ mov.get_tipo_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-right {% if mov.tipo == 'ENTRADA' %}text-success{% else %}text-danger{% endif %}">
+                                                        {% if mov.tipo == 'ENTRADA' %}+{% else %}-{% endif %}R$ {{ mov.valor|floatformat:2 }}
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">{{ mov.get_forma_pagamento_display }}</small>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Nenhuma movimentação encontrada.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ações Rápidas -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-bolt"></i> Ações Rápidas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'admin:financeiro_despesaoperacional_add' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus"></i> Nova Despesa
+                                </a>
+                                <a href="{% url 'admin:financeiro_metavenda_add' %}" class="btn btn-outline-success">
+                                    <i class="fas fa-target"></i> Nova Meta
+                                </a>
+                                <a href="{% url 'admin:financeiro_movimentacaocaixa_changelist' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-list"></i> Ver Movimentações
+                                </a>
+                                <a href="{% url 'admin:financeiro_despesaoperacional_changelist' %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-file-invoice"></i> Gerenciar Despesas
+                                </a>
+                            </div>
+                            
+                            {% if despesas_atraso > 0 %}
+                                <hr>
+                                <div class="alert alert-danger alert-sm">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Atenção!</strong><br>
+                                    Você tem {{ despesas_atraso }} despesa{{ despesas_atraso|pluralize }} em atraso.
+                                    <a href="{% url 'admin:financeiro_despesaoperacional_changelist' %}?pago__exact=0" class="alert-link">Ver agora</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Resumo Rápido -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie"></i> Resumo Rápido
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Receita:</span>
+                                    <strong class="text-success">R$ {{ receita_mes|floatformat:2 }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Custos:</span>
+                                    <strong class="text-warning">R$ {{ custo_mes|floatformat:2 }}</strong>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>Lucro:</strong></span>
+                                    <strong class="{% if lucro_mes >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        R$ {{ lucro_mes|floatformat:2 }}
+                                    </strong>
+                                </div>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div class="progress-bar {% if margem_mes >= 20 %}bg-success{% elif margem_mes >= 10 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ margem_mes|default:0 }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">Margem: {{ margem_mes|floatformat:1 }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .progress {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
