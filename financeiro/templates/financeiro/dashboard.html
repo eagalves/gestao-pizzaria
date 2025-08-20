@@ -189,20 +189,29 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <a href="{% url 'admin:financeiro_despesaoperacional_add' %}" class="btn btn-outline-primary">
-                                    <i class="fas fa-plus"></i> Nova Despesa
-                                </a>
-                                <a href="{% url 'admin:financeiro_metavenda_add' %}" class="btn btn-outline-success">
-                                    <i class="fas fa-target"></i> Nova Meta
-                                </a>
-                                <a href="{% url 'admin:financeiro_movimentacaocaixa_changelist' %}" class="btn btn-outline-info">
-                                    <i class="fas fa-list"></i> Ver Movimentações
-                                </a>
-                                <a href="{% url 'admin:financeiro_despesaoperacional_changelist' %}" class="btn btn-outline-warning">
-                                    <i class="fas fa-file-invoice"></i> Gerenciar Despesas
-                                </a>
-                            </div>
+                                                         <div class="d-grid gap-2">
+                                 <a href="{% url 'admin:financeiro_despesaoperacional_add' %}" class="btn btn-outline-primary">
+                                     <i class="fas fa-plus"></i> Nova Despesa
+                                 </a>
+                                 <a href="{% url 'admin:financeiro_metavenda_add' %}" class="btn btn-outline-success">
+                                     <i class="fas fa-target"></i> Nova Meta
+                                 </a>
+                                 <a href="{% url 'financeiro:relatorio_vendas' %}" class="btn btn-outline-info">
+                                     <i class="fas fa-chart-line"></i> Relatório de Vendas
+                                 </a>
+                                 <a href="{% url 'financeiro:relatorio_custos' %}" class="btn btn-outline-warning">
+                                     <i class="fas fa-chart-pie"></i> Relatório de Custos
+                                 </a>
+                                 <a href="{% url 'financeiro:fluxo_caixa' %}" class="btn btn-outline-secondary">
+                                     <i class="fas fa-money-bill-wave"></i> Fluxo de Caixa
+                                 </a>
+                                 <a href="{% url 'financeiro:metas_vendas' %}" class="btn btn-outline-dark">
+                                     <i class="fas fa-target"></i> Gestão de Metas
+                                 </a>
+                                 <a href="{% url 'financeiro:despesas_operacionais' %}" class="btn btn-outline-danger">
+                                     <i class="fas fa-file-invoice-dollar"></i> Despesas Operacionais
+                                 </a>
+                             </div>
                             
                             {% if despesas_atraso > 0 %}
                                 <hr>

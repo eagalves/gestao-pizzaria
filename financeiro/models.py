@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 
 from autenticacao.models import Pizzaria
@@ -225,7 +225,7 @@ class MetaVenda(models.Model):
     )
     
     # Período
-    mes = models.IntegerField(validators=[MinValueValidator(1), MinValueValidator(12)])
+    mes = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
     ano = models.IntegerField(validators=[MinValueValidator(2020)])
     
     # Categoria específica (opcional)

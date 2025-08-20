@@ -1,0 +1,344 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+{% load static %}
+
+{% block title %}Fluxo de Caixa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-money-bill-wave me-2"></i>Controle de Fluxo de Caixa</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="exportarPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="exportarExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="data_inicio" class="form-label">Data Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ data_inicio }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="data_fim" class="form-label">Data Fim</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ data_fim }}" required>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'financeiro:fluxo_caixa' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-2"></i>Limpar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Resumo do Fluxo -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Total de Entradas</h4>
+                            <h2>R$ {{ entradas|floatformat:2 }}</h2>
+                            <small>Receitas do período</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Total de Saídas</h4>
+                            <h2>R$ {{ saidas|floatformat:2 }}</h2>
+                            <small>Despesas e custos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card {% if saldo >= 0 %}bg-info{% else %}bg-warning{% endif %} text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Saldo do Período</h4>
+                            <h2>R$ {{ saldo|floatformat:2 }}</h2>
+                            <small>{% if saldo >= 0 %}Positivo{% else %}Negativo{% endif %}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos de Análise -->
+            <div class="row mb-4">
+                <!-- Entradas por Forma de Pagamento -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-credit-card me-2"></i>Entradas por Forma de Pagamento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoEntradas" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Saídas por Origem -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Saídas por Origem
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoSaidas" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Movimentações Detalhadas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Movimentações Detalhadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th>Origem</th>
+                                    <th>Valor</th>
+                                    <th>Forma Pagamento</th>
+                                    <th>Saldo Acumulado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in movimentacoes %}
+                                    <tr>
+                                        <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ mov.descricao }}</td>
+                                        <td>
+                                            <span class="badge {% if mov.tipo == 'ENTRADA' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ mov.get_tipo_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ mov.get_origem_display }}</small>
+                                        </td>
+                                        <td class="{% if mov.tipo == 'ENTRADA' %}text-success{% else %}text-danger{% endif %}">
+                                            <strong>
+                                                {% if mov.tipo == 'ENTRADA' %}+{% else %}-{% endif %}R$ {{ mov.valor|floatformat:2 }}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <small>{{ mov.get_forma_pagamento_display }}</small>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {% if mov.tipo == 'ENTRADA' %}
+                                                    +{{ mov.valor|floatformat:2 }}
+                                                {% else %}
+                                                    -{{ mov.valor|floatformat:2 }}
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            Nenhuma movimentação encontrada no período selecionado.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Análise de Fluxo -->
+            <div class="row">
+                <!-- Projeção de Fluxo -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Projeção de Fluxo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="text-primary">📈 Análise de Tendências</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-arrow-up text-success me-2"></i>
+                                        <strong>Entradas:</strong> {{ entradas|floatformat:2 }}% do total movimentado
+                                    </li>
+                                    <li><i class="fas fa-arrow-down text-danger me-2"></i>
+                                        <strong>Saídas:</strong> {{ saidas|floatformat:2 }}% do total movimentado
+                                    </li>
+                                    <li><i class="fas fa-percentage text-info me-2"></i>
+                                        <strong>Taxa de Retenção:</strong> 
+                                        {% if entradas > 0 %}
+                                            {% widthratio saldo entradas 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            {% if saldo < 0 %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Atenção:</strong> Saldo negativo no período. 
+                                    Considere revisar despesas e otimizar receitas.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recomendações -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>Recomendações
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="text-success">💡 Otimizações Sugeridas</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-chart-line text-info me-2"></i>
+                                    Monitore fluxo de caixa diariamente
+                                </li>
+                                <li><i class="fas fa-clock text-warning me-2"></i>
+                                    Antecipe recebimentos quando possível
+                                </li>
+                                <li><i class="fas fa-calendar text-primary me-2"></i>
+                                    Planeje pagamentos para manter saldo positivo
+                                </li>
+                                <li><i class="fas fa-target text-success me-2"></i>
+                                    Estabeleça reserva de emergência
+                                </li>
+                            </ul>
+                            
+                            <hr>
+                            
+                            <h6 class="text-primary">📊 KPIs do Fluxo</h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <small class="text-muted">Dias com Saldo Positivo</small>
+                                    <h5 class="text-success">
+                                        {% if saldo >= 0 %}100%{% else %}0%{% endif %}
+                                    </h5>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Eficiência de Caixa</small>
+                                    <h5 class="text-info">
+                                        {% if entradas > 0 %}
+                                            {% widthratio saidas entradas 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Entradas por Forma de Pagamento
+const ctxEntradas = document.getElementById('graficoEntradas').getContext('2d');
+const graficoEntradas = new Chart(ctxEntradas, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for entrada in entradas_por_pagamento %}'{{ entrada.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for entrada in entradas_por_pagamento %}{{ entrada.1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(108, 117, 125, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Saídas por Origem
+const ctxSaidas = document.getElementById('graficoSaidas').getContext('2d');
+const graficoSaidas = new Chart(ctxSaidas, {
+    type: 'bar',
+    data: {
+        labels: [{% for saida in saidas_por_origem %}'{{ saida.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Valor (R$)',
+            data: [{% for saida in saidas_por_origem %}{{ saida.1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(220, 53, 69, 0.8)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Saídas por Origem'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toFixed(2);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Funções de exportação
+function exportarPDF() {
+    alert('Funcionalidade de exportação PDF será implementada na próxima versão.');
+}
+
+function exportarExcel() {
+    alert('Funcionalidade de exportação Excel será implementada na próxima versão.');
+}
+</script>
+{% endblock %}

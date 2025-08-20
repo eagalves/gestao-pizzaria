@@ -1,0 +1,329 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+{% load static %}
+
+{% block title %}Relatório de Custos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-pie me-2"></i>Relatório de Custos e Despesas</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="exportarPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="exportarExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="data_inicio" class="form-label">Data Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ data_inicio }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="data_fim" class="form-label">Data Fim</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ data_fim }}" required>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'financeiro:relatorio_custos' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-2"></i>Limpar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Resumo de Custos -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Custo de Estoque</h4>
+                            <h2>R$ {{ custo_estoque|floatformat:2 }}</h2>
+                            <small>Compras de ingredientes</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Despesas Pagas</h4>
+                            <h2>R$ {{ despesas_pagas|floatformat:2 }}</h2>
+                            <small>Operacionais</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Despesas Pendentes</h4>
+                            <h2>R$ {{ despesas_pendentes|floatformat:2 }}</h2>
+                            <small>Aguardando pagamento</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-dark text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Custo Total</h4>
+                            <h2>R$ {{ custo_total|floatformat:2 }}</h2>
+                            <small>Período selecionado</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos de Análise -->
+            <div class="row mb-4">
+                <!-- Distribuição de Custos -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Distribuição de Custos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoDistribuicao" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Despesas por Tipo -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Despesas por Tipo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoDespesasTipo" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Análise de Compras por Ingrediente -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Top 10 Compras por Ingrediente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Ingrediente</th>
+                                    <th>Quantidade Comprada</th>
+                                    <th>Valor Total</th>
+                                    <th>% do Custo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ingrediente in compras_por_ingrediente %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td><strong>{{ ingrediente.0 }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ ingrediente.2 }}</span>
+                                        </td>
+                                        <td class="text-danger">
+                                            <strong>R$ {{ ingrediente.1|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% widthratio ingrediente.1 custo_total 100 %}%
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            Nenhuma compra registrada no período selecionado.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Análise de Despesas por Tipo -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Análise de Despesas por Tipo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tipo de Despesa</th>
+                                    <th>Valor Total</th>
+                                    <th>% das Despesas</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tipo in despesas_por_tipo %}
+                                    <tr>
+                                        <td><strong>{{ tipo.0 }}</strong></td>
+                                        <td class="text-danger">
+                                            <strong>R$ {{ tipo.1|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% widthratio tipo.1 despesas_pagas 100 %}%
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">Pago</span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            Nenhuma despesa registrada no período selecionado.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Insights e Recomendações -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Insights e Recomendações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">📊 Análise de Custos</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Custo de Estoque:</strong> {{ custo_estoque|floatformat:2 }}% do total
+                                </li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Despesas Operacionais:</strong> {{ despesas_pagas|floatformat:2 }}% do total
+                                </li>
+                                {% if despesas_pendentes > 0 %}
+                                    <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                        <strong>Atenção:</strong> R$ {{ despesas_pendentes|floatformat:2 }} em despesas pendentes
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">💡 Recomendações</h6>
+                            <ul class="list-unstyled">
+                                {% if despesas_pendentes > 0 %}
+                                    <li><i class="fas fa-arrow-up text-danger me-2"></i>
+                                        Regularize despesas pendentes para melhor controle
+                                    </li>
+                                {% endif %}
+                                <li><i class="fas fa-chart-line text-info me-2"></i>
+                                    Monitore custos de ingredientes semanalmente
+                                </li>
+                                <li><i class="fas fa-target text-warning me-2"></i>
+                                    Estabeleça metas de redução de custos por categoria
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Distribuição de Custos
+const ctxDistribuicao = document.getElementById('graficoDistribuicao').getContext('2d');
+const graficoDistribuicao = new Chart(ctxDistribuicao, {
+    type: 'doughnut',
+    data: {
+        labels: ['Estoque', 'Despesas Operacionais'],
+        datasets: [{
+            data: [{{ custo_estoque }}, {{ despesas_pagas }}],
+            backgroundColor: [
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Despesas por Tipo
+const ctxDespesasTipo = document.getElementById('graficoDespesasTipo').getContext('2d');
+const graficoDespesasTipo = new Chart(ctxDespesasTipo, {
+    type: 'bar',
+    data: {
+        labels: [{% for tipo in despesas_por_tipo %}'{{ tipo.0 }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Valor (R$)',
+            data: [{% for tipo in despesas_por_tipo %}{{ tipo.1 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(220, 53, 69, 0.8)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Despesas por Tipo'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toFixed(2);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Funções de exportação
+function exportarPDF() {
+    alert('Funcionalidade de exportação PDF será implementada na próxima versão.');
+}
+
+function exportarExcel() {
+    alert('Funcionalidade de exportação Excel será implementada na próxima versão.');
+}
+</script>
+{% endblock %}

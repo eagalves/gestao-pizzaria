@@ -1,0 +1,291 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+{% load static %}
+
+{% block title %}Relatório de Vendas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line me-2"></i>Relatório de Vendas</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="exportarPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="exportarExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="data_inicio" class="form-label">Data Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ data_inicio|default:"" }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="data_fim" class="form-label">Data Fim</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ data_fim|default:"" }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                <option value="">Todas as categorias</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" 
+                                            {% if categoria.id|stringformat:"s" == categoria_selecionada|default:"" %}selected{% endif %}>
+                                        {{ categoria.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'financeiro:relatorio_vendas' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-2"></i>Limpar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Resumo Estatístico -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Receita Total</h4>
+                            <h2>R$ {{ stats.receita_total|default:0|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Pedidos</h4>
+                            <h2>{{ stats.quantidade_pedidos|default:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Ticket Médio</h4>
+                            <h2>R$ {{ stats.ticket_medio|default:0|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Período</h4>
+                            <h6>{{ data_inicio|default:""|date:"d/m" }} - {{ data_fim|default:""|date:"d/m/Y" }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos e Análises -->
+            <div class="row mb-4">
+                <!-- Vendas por Dia -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-area me-2"></i>Evolução das Vendas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoVendas" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vendas por Forma de Pagamento -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-credit-card me-2"></i>Formas de Pagamento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="graficoPagamento" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabela de Produtos Mais Vendidos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>Top 10 Produtos Mais Vendidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Produto</th>
+                                    <th>Quantidade Vendida</th>
+                                    <th>Receita Gerada</th>
+                                    <th>% da Receita Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produto in produtos_vendidos %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td><strong>{{ produto.produto__nome }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ produto.quantidade_vendida }}</span>
+                                        </td>
+                                        <td class="text-success">
+                                            <strong>R$ {{ produto.receita_produto|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>
+                                            {% widthratio produto.receita_produto stats.receita_total 100 %}%
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            Nenhum produto vendido no período selecionado.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Análise Detalhada por Dia -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Análise Diária Detalhada
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Pedidos</th>
+                                    <th>Receita</th>
+                                                                         <th>Ticket Médio do Dia</th>
+                                    <th>% do Período</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in vendas_por_dia %}
+                                    <tr>
+                                                                                 <td>{{ venda.data_criacao__date|date:"d/m/Y" }}</td>
+                                        <td>{{ venda.pedidos }}</td>
+                                        <td class="text-success">
+                                            <strong>R$ {{ venda.receita|floatformat:2 }}</strong>
+                                        </td>
+                                                                                 <td>R$ {{ venda.ticket_medio_dia|floatformat:2 }}</td>
+                                        <td>
+                                            {% widthratio venda.receita stats.receita_total 100 %}%
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Vendas por Dia
+const ctxVendas = document.getElementById('graficoVendas').getContext('2d');
+const graficoVendas = new Chart(ctxVendas, {
+    type: 'line',
+    data: {
+                 labels: [{% for venda in vendas_por_dia %}'{{ venda.data_criacao__date|date:"d/m" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Receita (R$)',
+            data: [{% for venda in vendas_por_dia %}{{ venda.receita }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Evolução das Vendas por Dia'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toFixed(2);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Formas de Pagamento
+const ctxPagamento = document.getElementById('graficoPagamento').getContext('2d');
+const graficoPagamento = new Chart(ctxPagamento, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for venda in vendas_por_pagamento %}'{{ venda.forma_pagamento }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for venda in vendas_por_pagamento %}{{ venda.receita }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Funções de exportação
+function exportarPDF() {
+    alert('Funcionalidade de exportação PDF será implementada na próxima versão.');
+}
+
+function exportarExcel() {
+    alert('Funcionalidade de exportação Excel será implementada na próxima versão.');
+}
+</script>
+{% endblock %}
