@@ -11,8 +11,274 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Estilos customizados do dashboard -->
-    <link rel="stylesheet" href="{% static 'autenticacao/css/dashboard_super_admin.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #667eea !important;
+        }
+        
+        .btn-outline-light {
+            color: #667eea;
+            border-color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: #667eea;
+            border-color: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 1200px;
+        }
+        
+        .main-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card.clickable {
+            cursor: pointer;
+        }
+        
+        .stat-card.clickable:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        .stat-icon.primary { color: #667eea; }
+        .stat-icon.success { color: #48bb78; }
+        .stat-icon.warning { color: #ed8936; }
+        .stat-icon.info { color: #4299e1; }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0;
+        }
+        
+        .stat-number.primary { color: #667eea; }
+        .stat-number.success { color: #48bb78; }
+        .stat-number.warning { color: #ed8936; }
+        .stat-number.info { color: #4299e1; }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .btn-add-pizzaria {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-add-pizzaria:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .table-modern {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: none;
+        }
+        
+        .table-modern thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 1rem;
+        }
+        
+        .table-modern tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: #f1f5f9;
+        }
+        
+        .table-modern tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table-modern tbody tr:hover {
+            background-color: #f8fafc;
+            transform: scale(1.01);
+        }
+        
+        .badge-modern {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+        
+        .badge-danger {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+        }
+        
+        .pizzarias-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-top: 2rem;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 1rem;
+                border-radius: 16px;
+            }
+            
+            .main-title {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg">
@@ -41,48 +307,42 @@
                 Dashboard Super Admin
             </h1>
 
-            <!-- Métricas -->
-            <div class="row text-center mb-4">
-                <div class="col-md-3 mb-3">
-                    <a href="{% url 'lista_pizzarias' %}" class="metrics-card-link h-100">
-                        <div class="card metrics-card h-100">
-                            <div class="card-body">
-                                <i class="fas fa-store metric-icon"></i>
-                                <h5 class="card-title">Pizzarias</h5>
-                                <p class="metric-number metric-primary">{{ total_pizzarias }}</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card metrics-card h-100">
-                        <div class="card-body position-relative">
-                            <i class="fas fa-users metric-icon"></i>
-                            <h5 class="card-title">Usuários</h5>
-                            <p class="metric-number metric-success">{{ total_usuarios }}</p>
-                        </div>
+            <!-- Estatísticas -->
+            <div class="stats-grid">
+                <div class="stat-card clickable" onclick="window.location.href='{% url 'lista_pizzarias' %}'">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-store"></i>
                     </div>
+                    <div class="stat-label">Pizzarias</div>
+                    <div class="stat-number primary">{{ total_pizzarias }}</div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card metrics-card h-100">
-                        <div class="card-body position-relative">
-                            <i class="fas fa-user-shield metric-icon"></i>
-                            <h5 class="card-title">Super Admins</h5>
-                            <p class="metric-number metric-warning">{{ total_super_admins }}</p>
-                        </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-users"></i>
                     </div>
+                    <div class="stat-label">Usuários</div>
+                    <div class="stat-number success">{{ total_usuarios }}</div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card metrics-card h-100">
-                        <div class="card-body position-relative">
-                            <i class="fas fa-user-tie metric-icon"></i>
-                            <h5 class="card-title">Donos de Pizzaria</h5>
-                            <p class="metric-number metric-info">{{ total_donos }}</p>
-                        </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-user-shield"></i>
                     </div>
+                    <div class="stat-label">Super Admins</div>
+                    <div class="stat-number warning">{{ total_super_admins }}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="stat-label">Donos de Pizzaria</div>
+                    <div class="stat-number info">{{ total_donos }}</div>
                 </div>
             </div>
 
+            <!-- Seção de Pizzarias -->
             <div class="pizzarias-section">
                 <div class="section-header">
                     <h2 class="section-title">
@@ -95,9 +355,10 @@
                             Ver Lista Completa
                         </a>
                         <a href="{% url 'cadastro_pizzaria' %}" class="btn btn-add-pizzaria">
-                        <i class="fas fa-plus me-2"></i>
-                        Nova Pizzaria
-                    </a>
+                            <i class="fas fa-plus me-2"></i>
+                            Nova Pizzaria
+                        </a>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
