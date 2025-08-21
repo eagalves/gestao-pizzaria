@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, Sum, Count, Avg, F
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import calendar
 
 from autenticacao.decorators import super_admin_required
@@ -29,7 +29,7 @@ def dashboard_financeiro(request):
     receitas = Pedido.objects.filter(
         pizzaria=pizzaria,
         status='ENTREGUE',
-        data_criacao__date__gte=data_inicio
+        data_criacao__gte=data_inicio
     ).aggregate(total=Sum('total'))['total'] or 0
     
     # Converter para float se for Decimal
@@ -70,7 +70,117 @@ def dashboard_financeiro(request):
         recorrente=True
     ).count()
     
+    # Calcular métricas para hoje
+    hoje = timezone.now().date()
+    receita_hoje = Pedido.objects.filter(
+        pizzaria=pizzaria,
+        status='ENTREGUE',
+        data_criacao__date=hoje
+    ).aggregate(total=Sum('total'))['total'] or 0
+    
+    if hasattr(receita_hoje, 'quantize'):
+        receita_hoje = float(receita_hoje)
+    
+    pedidos_hoje = Pedido.objects.filter(
+        pizzaria=pizzaria,
+        status='ENTREGUE',
+        data_criacao__date=hoje
+    ).count()
+    
+    # Calcular métricas do mês
+    mes_atual = hoje.replace(day=1)
+    receita_mes = Pedido.objects.filter(
+        pizzaria=pizzaria,
+        status='ENTREGUE',
+        data_criacao__gte=mes_atual
+    ).aggregate(total=Sum('total'))['total'] or 0
+    
+    if hasattr(receita_mes, 'quantize'):
+        receita_mes = float(receita_mes)
+    
+    pedidos_mes = Pedido.objects.filter(
+        pizzaria=pizzaria,
+        status='ENTREGUE',
+        data_criacao__gte=mes_atual
+    ).count()
+    
+    # Custos do mês (compras de ingredientes)
+    custo_mes = CompraIngrediente.objects.filter(
+        ingrediente__pizzaria=pizzaria,
+        data_compra__gte=mes_atual
+    ).aggregate(total=Sum('valor_total_centavos'))['total'] or 0
+    custo_mes = float(custo_mes) / 100
+    
+    # Lucro e margem do mês
+    lucro_mes = receita_mes - custo_mes
+    margem_mes = (lucro_mes / receita_mes * 100) if receita_mes > 0 else 0
+    
+    # Ticket médio do mês
+    ticket_medio_mes = (receita_mes / pedidos_mes) if pedidos_mes > 0 else 0
+    
+    # Despesas em atraso
+    despesas_atraso = DespesaOperacional.objects.filter(
+        pizzaria=pizzaria,
+        data_vencimento__lt=hoje,
+        pago=False
+    ).count()
+    
+    # Movimentações recentes (últimos 10 dias)
+    data_inicio_recente = hoje - timedelta(days=10)
+    movimentacoes_recentes = []
+    
+    # Adicionar pedidos entregues como entradas
+    pedidos_recentes = Pedido.objects.filter(
+        pizzaria=pizzaria,
+        status='ENTREGUE',
+        data_criacao__gte=data_inicio_recente
+    ).order_by('-data_criacao')[:5]
+    
+    for pedido in pedidos_recentes:
+        movimentacoes_recentes.append({
+            'data_movimentacao': pedido.data_criacao,
+            'descricao': f'Venda - Pedido #{pedido.id}',
+            'tipo': 'ENTRADA',
+            'valor': pedido.total,
+            'forma_pagamento': 'Dinheiro'  # Default
+        })
+    
+    # Adicionar compras recentes como saídas
+    compras_recentes = CompraIngrediente.objects.filter(
+        ingrediente__pizzaria=pizzaria,
+        data_compra__gte=data_inicio_recente
+    ).order_by('-data_compra')[:5]
+    
+    for compra in compras_recentes:
+        movimentacoes_recentes.append({
+            'data_movimentacao': compra.data_compra,
+            'descricao': f'Compra - {compra.ingrediente.nome}',
+            'tipo': 'SAIDA',
+            'valor': compra.valor_total_centavos / 100,
+            'forma_pagamento': 'Dinheiro'  # Default
+        })
+    
+    # Ordenar por data (mais recente primeiro)
+    # Converter todas as datas para datetime para evitar problemas de comparação
+    for mov in movimentacoes_recentes:
+        if isinstance(mov['data_movimentacao'], date):
+            mov['data_movimentacao'] = datetime.combine(mov['data_movimentacao'], datetime.min.time())
+    
+    movimentacoes_recentes.sort(key=lambda x: x['data_movimentacao'], reverse=True)
+    movimentacoes_recentes = movimentacoes_recentes[:10]  # Limitar a 10
+    
     context = {
+        'mes_atual': hoje.strftime('%B/%Y'),
+        'receita_hoje': receita_hoje,
+        'receita_mes': receita_mes,
+        'custo_mes': custo_mes,
+        'lucro_mes': lucro_mes,
+        'margem_mes': margem_mes,
+        'pedidos_hoje': pedidos_hoje,
+        'pedidos_mes': pedidos_mes,
+        'ticket_medio_mes': ticket_medio_mes,
+        'despesas_atraso': despesas_atraso,
+        'movimentacoes_recentes': movimentacoes_recentes,
         'receitas': receitas,
         'despesas': despesas,
         'despesas_recorrentes': despesas_recorrentes,
@@ -109,8 +219,8 @@ def relatorio_vendas(request):
     pedidos = Pedido.objects.filter(
         pizzaria=pizzaria,
         status='ENTREGUE',
-        data_criacao__date__gte=data_inicio,
-        data_criacao__date__lte=data_fim
+        data_criacao__gte=data_inicio,
+        data_criacao__lte=data_fim
     ).order_by('-data_criacao')
     
     # Filtrar por categoria se especificado
