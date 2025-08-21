@@ -15,12 +15,17 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
-            # Verificar se usuário tem perfil no sistema
+            # Verificar se usuário tem perfil no sistema OU se é superusuário Django
             usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=user, ativo=True).first()
-            
-            if usuario_pizzaria:
+            print(user.is_superuser)
+            if usuario_pizzaria or user.is_superuser:
+                print('estrou ak')
                 login(request, user)
                 messages.success(request, f'Bem-vindo, {user.first_name or user.username}!')
+                
+                # Se for superusuário Django, redirecionar para dashboard super admin
+                if user.is_superuser:
+                    return redirect('dashboard_super_admin')
                 
                 # Redirecionar baseado no papel
                 if usuario_pizzaria.is_super_admin():
@@ -92,6 +97,10 @@ def visualizar_pizzaria(request, pizzaria_id):
 @login_required
 def dashboard(request):
     """Dashboard padrão - redireciona conforme o papel"""
+    # Se for superusuário Django, redirecionar para dashboard super admin
+    if request.user.is_superuser:
+        return redirect('dashboard_super_admin')
+    
     usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
     
     if not usuario_pizzaria:
@@ -151,11 +160,15 @@ def lista_pizzarias(request):
 @login_required
 def dashboard_super_admin(request):
     """Dashboard para Super Admin"""
-    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
-
-    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
-        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
-        return redirect('dashboard')
+    # Aceitar superusuários Django OU usuários do sistema
+    if request.user.is_superuser:
+        # Superusuário Django tem acesso total
+        pass
+    else:
+        usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+        if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
+            messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+            return redirect('dashboard')
 
     # Dados para o dashboard
     pizzarias = Pizzaria.objects.all()
