@@ -25,9 +25,10 @@ from .forms import IngredienteForm
                             'id': {'type': 'integer'},
                             'nome': {'type': 'string'},
                             'descricao': {'type': 'string'},
-                            'unidade': {'type': 'string'},
-                            'preco_unitario': {'type': 'number'},
-                            'ativo': {'type': 'boolean'},
+                            'vegetariano': {'type': 'boolean'},
+                            'vegano': {'type': 'boolean'},
+                            'contem_gluten': {'type': 'boolean'},
+                            'contem_lactose': {'type': 'boolean'},
                         }
                     }
                 }
@@ -47,9 +48,10 @@ class IngredientesListView(APIView):
                 'id': ingrediente.id,
                 'nome': ingrediente.nome,
                 'descricao': ingrediente.descricao,
-                'unidade': ingrediente.unidade,
-                'preco_unitario': float(ingrediente.preco_unitario) if ingrediente.preco_unitario else 0,
-                'ativo': ingrediente.ativo,
+                'vegetariano': ingrediente.vegetariano,
+                'vegano': ingrediente.vegano,
+                'contem_gluten': ingrediente.contem_gluten,
+                'contem_lactose': ingrediente.contem_lactose,
             })
         
         return Response({'ingredientes': data})
@@ -65,11 +67,12 @@ class IngredientesListView(APIView):
             'properties': {
                 'nome': {'type': 'string', 'description': 'Nome do ingrediente'},
                 'descricao': {'type': 'string', 'description': 'Descrição do ingrediente'},
-                'unidade': {'type': 'string', 'description': 'Unidade de medida'},
-                'preco_unitario': {'type': 'number', 'description': 'Preço unitário'},
-                'ativo': {'type': 'boolean', 'description': 'Status ativo/inativo'},
+                'vegetariano': {'type': 'boolean', 'description': 'É vegetariano?'},
+                'vegano': {'type': 'boolean', 'description': 'É vegano?'},
+                'contem_gluten': {'type': 'boolean', 'description': 'Contém glúten?'},
+                'contem_lactose': {'type': 'boolean', 'description': 'Contém lactose?'},
             },
-            'required': ['nome', 'unidade']
+            'required': ['nome']
         }
     },
     responses={
@@ -84,9 +87,10 @@ class IngredientesListView(APIView):
                         'id': {'type': 'integer'},
                         'nome': {'type': 'string'},
                         'descricao': {'type': 'string'},
-                        'unidade': {'type': 'string'},
-                        'preco_unitario': {'type': 'number'},
-                        'ativo': {'type': 'boolean'},
+                        'vegetariano': {'type': 'boolean'},
+                        'vegano': {'type': 'boolean'},
+                        'contem_gluten': {'type': 'boolean'},
+                        'contem_lactose': {'type': 'boolean'},
                     }
                 }
             }
@@ -101,18 +105,29 @@ class IngredienteCreateView(APIView):
         """Cadastra um novo ingrediente"""
         form = IngredienteForm(request.data)
         if form.is_valid():
-            ingrediente = form.save()
-            return Response({
-                'message': f'Ingrediente "{ingrediente.nome}" cadastrado com sucesso!',
-                'ingrediente': {
-                    'id': ingrediente.id,
-                    'nome': ingrediente.nome,
-                    'descricao': ingrediente.descricao,
-                    'unidade': ingrediente.unidade,
-                    'preco_unitario': float(ingrediente.preco_unitario) if ingrediente.preco_unitario else 0,
-                    'ativo': ingrediente.ativo,
-                }
-            }, status=status.HTTP_201_CREATED)
+            ingrediente = form.save(commit=False)
+            # Define a pizzaria do usuário logado
+            from autenticacao.models import UsuarioPizzaria
+            try:
+                usuario_pizzaria = UsuarioPizzaria.objects.get(usuario=request.user, ativo=True)
+                ingrediente.pizzaria = usuario_pizzaria.pizzaria
+                ingrediente.save()
+                return Response({
+                    'message': f'Ingrediente "{ingrediente.nome}" cadastrado com sucesso!',
+                    'ingrediente': {
+                        'id': ingrediente.id,
+                        'nome': ingrediente.nome,
+                        'descricao': ingrediente.descricao,
+                        'vegetariano': ingrediente.vegetariano,
+                        'vegano': ingrediente.vegano,
+                        'contem_gluten': ingrediente.contem_gluten,
+                        'contem_lactose': ingrediente.contem_lactose,
+                    }
+                }, status=status.HTTP_201_CREATED)
+            except UsuarioPizzaria.DoesNotExist:
+                return Response({
+                    'error': 'Usuário não está associado a uma pizzaria ativa'
+                }, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({
                 'error': 'Dados inválidos',
@@ -144,9 +159,10 @@ class IngredienteCreateView(APIView):
                         'id': {'type': 'integer'},
                         'nome': {'type': 'string'},
                         'descricao': {'type': 'string'},
-                        'unidade': {'type': 'string'},
-                        'preco_unitario': {'type': 'number'},
-                        'ativo': {'type': 'boolean'},
+                        'vegetariano': {'type': 'boolean'},
+                        'vegano': {'type': 'boolean'},
+                        'contem_gluten': {'type': 'boolean'},
+                        'contem_lactose': {'type': 'boolean'},
                     }
                 }
             }
@@ -171,8 +187,9 @@ class IngredienteDetailView(APIView):
                 'id': ingrediente.id,
                 'nome': ingrediente.nome,
                 'descricao': ingrediente.descricao,
-                'unidade': ingrediente.unidade,
-                'preco_unitario': float(ingrediente.preco_unitario) if ingrediente.preco_unitario else 0,
-                'ativo': ingrediente.ativo,
+                'vegetariano': ingrediente.vegetariano,
+                'vegano': ingrediente.vegano,
+                'contem_gluten': ingrediente.contem_gluten,
+                'contem_lactose': ingrediente.contem_lactose,
             }
         })
