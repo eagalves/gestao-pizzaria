@@ -300,6 +300,27 @@
         </div>
     </nav>
 
+    <!-- Sistema de Mensagens -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {% if message.tags == 'error' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% elif message.tags == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="container">
         <div class="main-container fade-in-up">
             <h1 class="main-title">
@@ -354,10 +375,10 @@
                             <i class="fas fa-list-ul me-2"></i>
                             Ver Lista Completa
                         </a>
-                        <a href="{% url 'cadastro_pizzaria' %}" class="btn btn-add-pizzaria">
+                        <button type="button" class="btn btn-add-pizzaria" id="btnNovaPizzaria">
                             <i class="fas fa-plus me-2"></i>
                             Nova Pizzaria
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -440,6 +461,234 @@
         </div>
     </div>
 
+    <!-- Formulário de Nova Pizzaria (inicialmente oculto) -->
+    <div class="container" id="formNovaPizzariaContainer" style="display: none;">
+        <div class="main-container fade-in-up" style="max-width: 800px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Nova Pizzaria
+                </h2>
+                <button type="button" class="btn btn-outline-secondary" id="btnVoltarLista">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Voltar para Lista
+                </button>
+            </div>
+
+            <form id="formNovaPizzaria" method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_nome" class="form-label">Nome da Pizzaria</label>
+                            <input type="text" class="form-control" id="id_nome" name="nome" required>
+                            <div class="invalid-feedback" id="nome-error"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_cnpj" class="form-label">CNPJ</label>
+                            <input type="text" class="form-control" id="id_cnpj" name="cnpj" required>
+                            <div class="invalid-feedback" id="cnpj-error"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_telefone" class="form-label">Telefone</label>
+                            <input type="text" class="form-control" id="id_telefone" name="telefone" required>
+                            <div class="invalid-feedback" id="telefone-error"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_ativa" class="form-label d-block">Status</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="id_ativa" name="ativa" checked>
+                                <label class="form-check-label" for="id_ativa">Ativa</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="id_endereco" class="form-label">Endereço</label>
+                    <textarea class="form-control" id="id_endereco" name="endereco" rows="3" required></textarea>
+                    <div class="invalid-feedback" id="endereco-error"></div>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-add-pizzaria flex-grow-1">
+                        <i class="fas fa-save me-2"></i>
+                        Salvar Pizzaria
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnCancelarForm">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-qN2c6+gJIKBo2Plew69RJPkVcmS6gZ+OnLsPYBeVJRT2bXNuZNm5tQ9iVOFl1WtF" crossorigin="anonymous"></script>
+    
+    <script>
+        // Elementos da interface
+        const pizzariasSection = document.querySelector('.pizzarias-section');
+        const formContainer = document.getElementById('formNovaPizzariaContainer');
+        const btnNovaPizzaria = document.getElementById('btnNovaPizzaria');
+        const btnVoltarLista = document.getElementById('btnVoltarLista');
+        const btnCancelarForm = document.getElementById('btnCancelarForm');
+        const form = document.getElementById('formNovaPizzaria');
+
+        // Função para mostrar o formulário
+        function mostrarFormulario() {
+            pizzariasSection.style.display = 'none';
+            formContainer.style.display = 'block';
+            // Focar no primeiro campo
+            document.getElementById('id_nome').focus();
+        }
+
+        // Função para mostrar a lista de pizzarias
+        function mostrarLista() {
+            formContainer.style.display = 'none';
+            pizzariasSection.style.display = 'block';
+            // Limpar formulário
+            form.reset();
+            limparErros();
+        }
+
+        // Função para limpar erros de validação
+        function limparErros() {
+            const campos = ['nome', 'cnpj', 'telefone', 'endereco'];
+            campos.forEach(campo => {
+                const input = document.getElementById(`id_${campo}`);
+                const errorDiv = document.getElementById(`${campo}-error`);
+                if (input) input.classList.remove('is-invalid');
+                if (errorDiv) errorDiv.textContent = '';
+            });
+        }
+
+        // Função para exibir erros de validação
+        function exibirErros(erros) {
+            Object.keys(erros).forEach(campo => {
+                const input = document.getElementById(`id_${campo}`);
+                const errorDiv = document.getElementById(`${campo}-error`);
+                if (input && errorDiv) {
+                    input.classList.add('is-invalid');
+                    errorDiv.textContent = erros[campo].join(', ');
+                }
+            });
+        }
+
+        // Função para exibir mensagem de sucesso
+        function exibirMensagemSucesso(mensagem) {
+            const alertContainer = document.createElement('div');
+            alertContainer.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertContainer.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertContainer);
+            
+            // Remover automaticamente após 5 segundos
+            setTimeout(() => {
+                if (alertContainer.parentNode) {
+                    alertContainer.remove();
+                }
+            }, 5000);
+        }
+
+        // Função para exibir mensagem de erro
+        function exibirMensagemErro(mensagem) {
+            const alertContainer = document.createElement('div');
+            alertContainer.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertContainer.innerHTML = `
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertContainer);
+            
+            // Remover automaticamente após 5 segundos
+            setTimeout(() => {
+                if (alertContainer.parentNode) {
+                    alertContainer.remove();
+                }
+            }, 5000);
+        }
+
+        // Event listeners
+        btnNovaPizzaria.addEventListener('click', mostrarFormulario);
+        btnVoltarLista.addEventListener('click', mostrarLista);
+        btnCancelarForm.addEventListener('click', mostrarLista);
+
+        // Event listener para o formulário
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            
+            // Limpar erros anteriores
+            limparErros();
+            
+            // Desabilitar botão durante o envio
+            const btnSalvar = form.querySelector('button[type="submit"]');
+            const textoOriginal = btnSalvar.innerHTML;
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvando...';
+            
+            // Enviar dados via AJAX
+            fetch('{% url "cadastro_pizzaria_ajax" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    exibirMensagemSucesso(data.message);
+                    // Voltar para a lista
+                    mostrarLista();
+                    // Recarregar página para mostrar nova pizzaria
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    if (data.errors) {
+                        exibirErros(data.errors);
+                    } else {
+                        exibirMensagemErro(data.message || 'Erro ao salvar pizzaria');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                exibirMensagemErro('Erro de conexão. Tente novamente.');
+            })
+            .finally(() => {
+                // Reabilitar botão
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = textoOriginal;
+            });
+        });
+
+        // Verificar se todos os elementos estão presentes
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado!');
+            if (pizzariasSection) console.log('Seção de pizzarias encontrada!');
+            if (formContainer) console.log('Container do formulário encontrado!');
+            if (form) console.log('Formulário encontrado!');
+        });
+    </script>
 </body>
 </html>

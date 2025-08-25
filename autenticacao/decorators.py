@@ -28,8 +28,12 @@ def super_admin_required(view_func):
             UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
         )
 
-        if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
-            messages.error(request, "Permissão negada. Apenas Super Admin pode acessar.")
+        if not usuario_pizzaria:
+            messages.error(request, "Usuário sem perfil ativo no sistema. Entre em contato com o administrador.")
+            return redirect("dashboard")
+        
+        if not usuario_pizzaria.is_super_admin():
+            messages.warning(request, "Acesso restrito. Apenas Super Administradores podem acessar esta funcionalidade.")
             return redirect("dashboard")
 
         return view_func(request, *args, **kwargs)

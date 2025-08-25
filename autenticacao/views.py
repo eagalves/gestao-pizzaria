@@ -74,12 +74,12 @@ def visualizar_pizzaria(request, pizzaria_id):
     usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
 
     if not usuario_pizzaria:
-        messages.error(request, 'Usuário sem permissões no sistema.')
-        return redirect('login')
+        messages.error(request, 'Usuário sem perfil ativo no sistema. Entre em contato com o administrador.')
+        return redirect('dashboard')
 
     # Se for dono de pizzaria, garantir que esteja acessando a própria pizzaria
     if usuario_pizzaria.is_dono_pizzaria() and usuario_pizzaria.pizzaria.id != pizzaria_id:
-        messages.error(request, 'Acesso negado para esta pizzaria.')
+        messages.warning(request, 'Acesso restrito. Você só pode visualizar sua própria pizzaria.')
         return redirect('dashboard')
 
     try:
@@ -122,8 +122,12 @@ def cadastro_pizzaria(request):
     """Cadastro de nova pizzaria (apenas Super Admin)"""
     usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
 
-    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
-        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+    if not usuario_pizzaria:
+        messages.error(request, 'Usuário sem perfil ativo no sistema. Entre em contato com o administrador.')
+        return redirect('dashboard')
+    
+    if not usuario_pizzaria.is_super_admin():
+        messages.warning(request, 'Acesso restrito. Apenas Super Administradores podem cadastrar novas pizzarias.')
         return redirect('dashboard')
 
     if request.method == 'POST':
@@ -146,8 +150,12 @@ def lista_pizzarias(request):
     """Lista completa de pizzarias (apenas Super Admin)"""
     usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
 
-    if not usuario_pizzaria or not usuario_pizzaria.is_super_admin():
-        messages.error(request, 'Permissão negada. Apenas Super Admin pode acessar.')
+    if not usuario_pizzaria:
+        messages.error(request, 'Usuário sem perfil ativo no sistema. Entre em contato com o administrador.')
+        return redirect('dashboard')
+    
+    if not usuario_pizzaria.is_super_admin():
+        messages.warning(request, 'Acesso restrito. Apenas Super Administradores podem visualizar a lista de pizzarias.')
         return redirect('dashboard')
 
     pizzarias = Pizzaria.objects.all()
@@ -185,3 +193,49 @@ def dashboard_super_admin(request):
         'total_donos': total_donos,
     }
     return render(request, 'autenticacao/dashboard_super_admin.html', context)
+
+
+@login_required
+def cadastro_pizzaria_ajax(request):
+    """Cadastro de nova pizzaria via AJAX (apenas Super Admin)"""
+    from django.http import JsonResponse
+    
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+
+    if not usuario_pizzaria:
+        return JsonResponse({
+            'success': False,
+            'message': 'Usuário sem perfil ativo no sistema. Entre em contato com o administrador.'
+        })
+    
+    if not usuario_pizzaria.is_super_admin():
+        return JsonResponse({
+            'success': False,
+            'message': 'Acesso restrito. Apenas Super Administradores podem cadastrar novas pizzarias.'
+        })
+
+    form = PizzariaForm(request.POST)
+    if form.is_valid():
+        try:
+            pizzaria = form.save()
+            return JsonResponse({
+                'success': True,
+                'message': f'Pizzaria "{pizzaria.nome}" cadastrada com sucesso!',
+                'pizzaria_id': pizzaria.id
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro ao salvar pizzaria: {str(e)}'
+            })
+    else:
+        # Retornar erros de validação
+        errors = {}
+        for field, field_errors in form.errors.items():
+            errors[field] = [str(error) for error in field_errors]
+        
+        return JsonResponse({
+            'success': False,
+            'errors': errors,
+            'message': 'Por favor, corrija os erros no formulário.'
+        })
