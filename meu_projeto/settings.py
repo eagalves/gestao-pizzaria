@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_spectacular',
     'autenticacao',  # Nosso app para gestão de pizzarias
     'ingredientes',
     'produtos',
@@ -126,12 +128,54 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configurações do Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# Configurações do drf-spectacular (Swagger)
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API de Gestão de Pizzarias',
+    'DESCRIPTION': 'API completa para gerenciamento de pizzarias, incluindo autenticação, produtos, pedidos, estoque e financeiro.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'TAGS': [
+        {'name': 'autenticacao', 'description': 'Endpoints de autenticação e gerenciamento de usuários'},
+        {'name': 'pizzarias', 'description': 'Gerenciamento de pizzarias'},
+        {'name': 'produtos', 'description': 'Gerenciamento de produtos e ingredientes'},
+        {'name': 'pedidos', 'description': 'Gerenciamento de pedidos'},
+        {'name': 'clientes', 'description': 'Gerenciamento de clientes'},
+        {'name': 'estoque', 'description': 'Controle de estoque e fornecedores'},
+        {'name': 'financeiro', 'description': 'Gestão financeira e relatórios'},
+    ],
+    'CONTACT': {
+        'name': 'Equipe de Desenvolvimento',
+        'email': 'dev@pizzarias.com',
+    },
+    'LICENSE': {
+        'name': 'MIT License',
+        'url': 'https://opensource.org/licenses/MIT',
+    },
+    'EXTERNAL_DOCS': {
+        'description': 'Documentação completa do projeto',
+        'url': 'https://github.com/seu-usuario/gestao-pizzarias',
+    },
+}
 
 # Configurações de Login
 LOGIN_URL = 'login'
