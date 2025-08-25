@@ -9,6 +9,7 @@ urlpatterns = [
     
     # Estoque
     path('estoque/', views.lista_estoque, name='lista_estoque'),
+    path('estoque/pizzaria/<int:pizzaria_id>/', views.lista_estoque, name='lista_estoque_pizzaria'),
     path('estoque/<int:estoque_id>/editar/', views.editar_estoque, name='editar_estoque'),
     
     # Fornecedores

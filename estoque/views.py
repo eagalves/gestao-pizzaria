@@ -10,8 +10,10 @@ from autenticacao.models import Pizzaria
 from ingredientes.models import Ingrediente
 from .models import Fornecedor, EstoqueIngrediente, CompraIngrediente, HistoricoPrecoCompra
 from .forms import FornecedorForm, CompraIngredienteForm, EstoqueIngredienteForm
+from autenticacao.decorators import pizzaria_required
 
 
+@pizzaria_required
 def dashboard_estoque(request):
     """Dashboard principal do estoque."""
     pizzaria = request.user.usuarios_pizzaria.first().pizzaria
@@ -54,9 +56,24 @@ def dashboard_estoque(request):
     return render(request, 'estoque/dashboard.html', context)
 
 
-def lista_estoque(request):
+@pizzaria_required
+def lista_estoque(request, pizzaria_id=None):
     """Lista todos os ingredientes em estoque."""
-    pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+    # Se super_admin e pizzaria_id fornecido, usar essa pizzaria
+    if pizzaria_id and request.user.usuarios_pizzaria.filter(ativo=True, papel='super_admin').exists():
+        try:
+            pizzaria = Pizzaria.objects.get(id=pizzaria_id)
+        except Pizzaria.DoesNotExist:
+            messages.error(request, 'Pizzaria não encontrada.')
+            return redirect('estoque:lista_estoque')
+    else:
+        # Usar pizzaria do usuário logado
+        pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+        
+        # Se pizzaria_id foi fornecido mas usuário não é super_admin, redirecionar
+        if pizzaria_id and pizzaria.id != pizzaria_id:
+            messages.warning(request, 'Acesso restrito. Você só pode visualizar o estoque de sua própria pizzaria.')
+            return redirect('estoque:lista_estoque')
     
     # Filtros
     busca = request.GET.get('busca', '')
@@ -65,7 +82,6 @@ def lista_estoque(request):
     estoques = EstoqueIngrediente.objects.filter(
         ingrediente__pizzaria=pizzaria
     ).select_related('ingrediente')
-    
     if busca:
         estoques = estoques.filter(
             Q(ingrediente__nome__icontains=busca)
@@ -82,11 +98,14 @@ def lista_estoque(request):
         'estoques': estoques,
         'busca': busca,
         'filtro_estoque': filtro_estoque,
+        'pizzaria_atual': pizzaria,
+        'is_super_admin': request.user.usuarios_pizzaria.filter(ativo=True, papel='super_admin').exists(),
     }
     
     return render(request, 'estoque/lista_estoque.html', context)
 
 
+@pizzaria_required
 def editar_estoque(request, estoque_id):
     """Edita configurações de estoque de um ingrediente."""
     pizzaria = request.user.usuarios_pizzaria.first().pizzaria
@@ -183,15 +202,22 @@ def editar_fornecedor(request, fornecedor_id):
     return render(request, 'estoque/form_fornecedor.html', context)
 
 
+@pizzaria_required
 def lista_compras(request):
     """Lista histórico de compras."""
-    pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+    usuario_pizzaria = request.user.usuarios_pizzaria.first()
+    if not usuario_pizzaria or not usuario_pizzaria.pizzaria:
+        messages.error(request, 'Usuário não tem pizzaria associada.')
+        return redirect('autenticacao:dashboard')
+    
+    pizzaria = usuario_pizzaria.pizzaria
     
     # Filtros
     busca = request.GET.get('busca', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
     
+    # Buscar compras para ingredientes desta pizzaria
     compras = CompraIngrediente.objects.filter(
         ingrediente__pizzaria=pizzaria
     ).select_related('ingrediente', 'fornecedor')
@@ -317,6 +343,7 @@ def relatorio_custos(request):
     return render(request, 'estoque/relatorio_custos.html', context)
 
 
+@pizzaria_required
 def ajax_ingrediente_preco(request, ingrediente_id):
     """Retorna preço atual do ingrediente via AJAX."""
     try:
