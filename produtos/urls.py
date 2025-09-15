@@ -9,6 +9,7 @@ urlpatterns = [
     path("<int:produto_id>/ingredientes/", views.ingredientes_produto, name="ingredientes_produto"),
     # rota para excluir produto
     path("<int:produto_id>/excluir/", views.excluir_produto, name="excluir_produto"),
+    path("<int:produto_id>/disponivel/", views.alternar_disponibilidade, name="alternar_disponibilidade"),
     # rota para gerenciar preços
     path("<int:produto_id>/precos/", views.gerenciar_precos, name="gerenciar_precos"),
     

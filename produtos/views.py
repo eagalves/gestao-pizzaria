@@ -206,6 +206,34 @@ def excluir_produto(request, produto_id):
     return redirect("lista_produtos")
 
 
+# ==================== DISPONIBILIDADE ====================
+
+@login_required
+def alternar_disponibilidade(request, produto_id):
+    """Ativa ou desativa a disponibilidade de um produto (toggle)."""
+    if request.method != "POST":
+        return redirect("lista_produtos")
+
+    usuario_pizzaria = UsuarioPizzaria.objects.filter(usuario=request.user, ativo=True).first()
+    if not usuario_pizzaria:
+        messages.error(request, "Usuário sem permissões no sistema.")
+        return redirect("login")
+
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    # Verificar permissão: super_admin ou dono da pizzaria
+    if not usuario_pizzaria.is_super_admin() and produto.pizzaria != usuario_pizzaria.pizzaria:
+        messages.error(request, "Permissão negada.")
+        return redirect("lista_produtos")
+
+    produto.disponivel = not produto.disponivel
+    produto.save()
+
+    estado = "disponível" if produto.disponivel else "indisponível"
+    messages.success(request, f'Produto "{produto.nome}" marcado como {estado}.')
+    return redirect("lista_produtos")
+
+
 # ==================== VIEWS DE CATEGORIAS ====================
 
 @login_required
