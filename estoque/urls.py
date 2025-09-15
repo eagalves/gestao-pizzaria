@@ -24,6 +24,10 @@ urlpatterns = [
     # Relatórios
     path('relatorios/custos/', views.relatorio_custos, name='relatorio_custos'),
     path('ingredientes/<int:ingrediente_id>/historico/', views.historico_precos, name='historico_precos'),
+
+    # Histórico de utilização
+    path('usos/', views.historico_uso_estoque, name='historico_uso_estoque'),
+    path('ingredientes/<int:ingrediente_id>/usos/', views.historico_uso_ingrediente, name='historico_uso_ingrediente'),
     
     # AJAX
     path('ajax/ingrediente/<int:ingrediente_id>/preco/', views.ajax_ingrediente_preco, name='ajax_ingrediente_preco'),

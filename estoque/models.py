@@ -369,3 +369,44 @@ class HistoricoPrecoCompra(models.Model):
     def preco(self):
         """Retorna preço em reais."""
         return self.preco_centavos / 100
+
+
+# -------------------------------------------------------------------
+# Histórico de utilização/saída de ingredientes
+# -------------------------------------------------------------------
+
+
+class HistoricoUsoIngrediente(models.Model):
+    """Registra cada saída de ingrediente do estoque (ex.: produção de pedidos)."""
+
+    UNIDADES_CHOICES = EstoqueIngrediente.UNIDADES_CHOICES
+
+    ingrediente = models.ForeignKey(
+        Ingrediente,
+        on_delete=models.CASCADE,
+        related_name="historico_usos",
+    )
+    pedido = models.ForeignKey(
+        "pedidos.Pedido",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="usos_ingredientes",
+    )
+    quantidade = models.DecimalField(max_digits=10, decimal_places=3)
+    unidade = models.CharField(max_length=10, choices=UNIDADES_CHOICES)
+    estoque_antes = models.DecimalField(max_digits=10, decimal_places=3)
+    estoque_depois = models.DecimalField(max_digits=10, decimal_places=3)
+    data_utilizacao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Uso de Ingrediente"
+        verbose_name_plural = "Usos de Ingredientes"
+        ordering = ["-data_utilizacao"]
+
+    def __str__(self):
+        origem = f"Pedido #{self.pedido_id}" if self.pedido_id else "Ajuste Manual"
+        return (
+            f"{self.ingrediente.nome} - {self.quantidade} {self.unidade} | "
+            f"{origem} - {self.data_utilizacao:%d/%m/%Y %H:%M}"
+        )

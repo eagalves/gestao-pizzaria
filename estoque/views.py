@@ -8,7 +8,7 @@ from decimal import Decimal
 from autenticacao.decorators import super_admin_required
 from autenticacao.models import Pizzaria
 from ingredientes.models import Ingrediente
-from .models import Fornecedor, EstoqueIngrediente, CompraIngrediente, HistoricoPrecoCompra
+from .models import Fornecedor, EstoqueIngrediente, CompraIngrediente, HistoricoPrecoCompra, HistoricoUsoIngrediente
 from .forms import FornecedorForm, CompraIngredienteForm, EstoqueIngredienteForm
 from autenticacao.decorators import pizzaria_required
 
@@ -341,6 +341,73 @@ def relatorio_custos(request):
     }
     
     return render(request, 'estoque/relatorio_custos.html', context)
+
+
+# --------------------------------------------------------------
+# Histórico de Utilização de Estoque
+# --------------------------------------------------------------
+
+
+@pizzaria_required
+def historico_uso_estoque(request):
+    """Lista geral de utilização de ingredientes (saídas de estoque)."""
+    pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+
+    # Filtros
+    busca = request.GET.get('busca', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+
+    usos = HistoricoUsoIngrediente.objects.filter(
+        ingrediente__pizzaria=pizzaria
+    ).select_related('ingrediente', 'pedido')
+
+    if busca:
+        usos = usos.filter(
+            Q(ingrediente__nome__icontains=busca)
+        )
+
+    if data_inicio:
+        usos = usos.filter(data_utilizacao__date__gte=data_inicio)
+    if data_fim:
+        usos = usos.filter(data_utilizacao__date__lte=data_fim)
+
+    usos = usos.order_by('-data_utilizacao')
+
+    # Totais
+    total_itens = usos.aggregate(total=Sum('quantidade'))['total'] or 0
+
+    context = {
+        'usos': usos,
+        'busca': busca,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'total_itens': total_itens,
+    }
+
+    return render(request, 'estoque/historico_uso_estoque.html', context)
+
+
+@pizzaria_required
+def historico_uso_ingrediente(request, ingrediente_id):
+    """Histórico de utilização para um ingrediente específico."""
+    pizzaria = request.user.usuarios_pizzaria.first().pizzaria
+
+    ingrediente = get_object_or_404(Ingrediente, id=ingrediente_id, pizzaria=pizzaria)
+
+    usos = HistoricoUsoIngrediente.objects.filter(
+        ingrediente=ingrediente
+    ).select_related('pedido').order_by('-data_utilizacao')
+
+    total_utilizado = usos.aggregate(total=Sum('quantidade'))['total'] or 0
+
+    context = {
+        'ingrediente': ingrediente,
+        'usos': usos,
+        'total_utilizado': total_utilizado,
+    }
+
+    return render(request, 'estoque/historico_uso_ingrediente.html', context)
 
 
 @pizzaria_required

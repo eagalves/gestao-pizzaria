@@ -1,0 +1,55 @@
+{% extends 'autenticacao/pizzaria_dashboard.html' %}
+
+{% block title %}Uso – {{ ingrediente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-sign-out-alt me-2"></i>Utilização: {{ ingrediente.nome }}</h2>
+            <a href="{% url 'estoque:historico_uso_estoque' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-table me-2"></i>Registros</h5>
+            <span class="badge bg-secondary">Total utilizado: {{ total_utilizado }} {{ ingrediente.estoque.get_unidade_medida_display }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if usos %}
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Pedido</th>
+                            <th class="text-end">Qtde</th>
+                            <th class="text-end">Antes</th>
+                            <th class="text-end">Depois</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for uso in usos %}
+                        <tr>
+                            <td>{{ uso.data_utilizacao|date:'d/m/Y H:i' }}</td>
+                            <td>
+                                {% if uso.pedido %}
+                                    <a href="{% url 'detalhes_pedido' uso.pedido.id %}" target="_blank">#{{ uso.pedido.id }}</a>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td class="text-end">{{ uso.quantidade }} {{ uso.unidade }}</td>
+                            <td class="text-end">{{ uso.estoque_antes|floatformat:3 }}</td>
+                            <td class="text-end">{{ uso.estoque_depois|floatformat:3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="p-3 mb-0 text-muted">Nenhum registro para este ingrediente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
