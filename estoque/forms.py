@@ -208,9 +208,9 @@ class CompraIngredienteForm(forms.ModelForm):
                 raise forms.ValidationError({
                     'preco_unitario_reais': 'Preço unitário é obrigatório quando a unidade é "Unidade".'
                 })
-            if valor_total_reais:
+            if not valor_total_reais:
                 raise forms.ValidationError({
-                    'valor_total_reais': 'Para unidades, o valor total é calculado automaticamente.'
+                    'valor_total_reais': 'Para unidades, o valor total deveria ser calculado automaticamente.'
                 })
         else:
             # Para kg/g: valor total obrigatório, preço unitário não deve ser informado
