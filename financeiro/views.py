@@ -215,14 +215,18 @@ def relatorio_vendas(request):
         data_fim = timezone.now().date()
         data_inicio = data_fim - timedelta(days=30)
     
+    # Converter datas (date) para datetimes conscientes de fuso para comparar com DateTimeField
+    inicio_dt = timezone.make_aware(datetime.combine(data_inicio, datetime.min.time()))
+    fim_dt = timezone.make_aware(datetime.combine(data_fim, datetime.max.time()))
+    
     # Pedidos entregues no período
     pedidos = Pedido.objects.filter(
         pizzaria=pizzaria,
         status='ENTREGUE',
-        data_criacao__gte=data_inicio,
-        data_criacao__lte=data_fim
+        data_criacao__gte=inicio_dt,
+        data_criacao__lte=fim_dt
     ).order_by('-data_criacao')
-    
+    print(pedidos)
     # Filtrar por categoria se especificado
     if categoria_id:
         try:
