@@ -243,26 +243,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Alterar cores e alertas baseado na situação
         if (lucroCentavos < 0) {
-            // PREJUÍZO
+            // PREJUÍZO (vermelho)
             margemLucroSpan.className = 'badge bg-danger';
             lucroLiquidoSpan.className = 'badge bg-danger';
             alertaPrejuizo.style.display = 'block';
-        } else if (margem < 30) {
-            // MARGEM MUITO BAIXA
+        } else if (margem < 20) {
+            // MARGEM RUIM (laranja)
+            margemLucroSpan.className = 'badge bg-orange';
+            lucroLiquidoSpan.className = 'badge bg-orange';
+            alertaMargemBaixa.style.display = 'block';
+        } else if (margem < 40) {
+            // MARGEM BAIXA (amarelo)
             margemLucroSpan.className = 'badge bg-warning';
             lucroLiquidoSpan.className = 'badge bg-warning';
             alertaMargemBaixa.style.display = 'block';
-        } else if (margem < 50) {
-            // MARGEM BAIXA
-            margemLucroSpan.className = 'badge bg-warning';
-            lucroLiquidoSpan.className = 'badge bg-warning';
         } else {
-            // MARGEM BOA
+            // MARGEM BOA (verde)
             margemLucroSpan.className = 'badge bg-success';
             lucroLiquidoSpan.className = 'badge bg-success';
-            if (margem >= 50) {
-                alertaMargemBoa.style.display = 'block';
-            }
+            alertaMargemBoa.style.display = 'block';
         }
         
         // Botão habilitado se pelo menos o preço de venda estiver preenchido
@@ -276,7 +275,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Prejuízo - botão verde mas com texto informativo
                 submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Salvar (Prejuízo)';
                 submitBtn.title = 'Atenção: Este preço gerará prejuízo!';
-            } else if (margem < 30) {
+            } else if (margem < 20) {
+                // Margem ruim
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Salvar (Margem Ruim)';
+                submitBtn.title = 'Atenção: Margem ruim!';
+            } else if (margem < 40) {
                 // Margem baixa - botão verde mas com texto informativo
                 submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Salvar (Margem Baixa)';
                 submitBtn.title = 'Atenção: Margem muito baixa!';
@@ -310,6 +313,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .badge {
     font-size: 0.8em;
+}
+
+/* Cor laranja para margem ruim */
+.bg-orange {
+    background-color: #fd7e14 !important;
+    color: #fff !important;
 }
 </style>
 {% endblock %}

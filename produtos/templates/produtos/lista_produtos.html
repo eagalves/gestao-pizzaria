@@ -2,6 +2,15 @@
 
 {% block title %}Produtos - Gestão Pizzaria{% endblock %}
 
+{% block extra_css %}
+<style>
+.bg-orange {
+    background-color: #fd7e14 !important;
+    color: #fff !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Produtos</h2>
@@ -80,12 +89,14 @@
                     <td>
                         {% if produto.preco_venda_atual > 0 and produto.preco_custo_atual > 0 %}
                             {% with margem=produto.preco_atual.margem_percentual %}
-                                {% if margem >= 100 %}
-                                    <span class="badge bg-success">{{ margem|floatformat:1 }}%</span>
-                                {% elif margem >= 50 %}
+                                {% if margem < 0 %}
+                                    <span class="badge bg-danger">{{ margem|floatformat:1 }}%</span>
+                                {% elif margem < 20 %}
+                                    <span class="badge bg-orange">{{ margem|floatformat:1 }}%</span>
+                                {% elif margem < 40 %}
                                     <span class="badge bg-warning">{{ margem|floatformat:1 }}%</span>
                                 {% else %}
-                                    <span class="badge bg-danger">{{ margem|floatformat:1 }}%</span>
+                                    <span class="badge bg-success">{{ margem|floatformat:1 }}%</span>
                                 {% endif %}
                             {% endwith %}
                         {% else %}
