@@ -153,8 +153,8 @@
                                                 <td>{{ pi.ingrediente.nome }}</td>
                                                 <td>{{ pi.quantidade }} {{ pi.get_unidade_display }}</td>
                                                 <td>
-                                                    {% if pi.ingrediente.estoque %}
-                                                        R$ {{ pi.ingrediente.estoque.preco_compra_atual|floatformat:2 }}
+                                                    {% if pi.custo > 0 %}
+                                                        R$ {{ pi.custo|floatformat:2 }}
                                                     {% else %}
                                                         <span class="text-muted">N/D</span>
                                                     {% endif %}

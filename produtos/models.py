@@ -288,3 +288,45 @@ class ProdutoIngrediente(models.Model):
 
     def __str__(self):
         return f"{self.quantidade} {self.get_unidade_display()} de {self.ingrediente.nome} em {self.produto.nome}"
+
+    # --------------------
+    # Custos
+    # --------------------
+
+    @property
+    def custo_centavos(self):
+        """Calcula o custo deste ingrediente (proporcional à quantidade usada) em centavos."""
+        try:
+            estoque = self.ingrediente.estoque
+        except Exception:
+            return 0
+
+        preco_unitario_centavos = estoque.preco_compra_atual_centavos
+        unidade_estoque = estoque.unidade_medida
+
+        # Converter quantidade usada para a unidade do estoque
+        quantidade_convertida = self._converter_unidade(self.quantidade, self.unidade, unidade_estoque)
+
+        return int(float(quantidade_convertida) * preco_unitario_centavos)
+
+    @property
+    def custo(self):
+        """Custo deste ingrediente em reais."""
+        return self.custo_centavos / 100
+
+    # Método auxiliar para conversão de unidades (g <-> kg). Igual ao usado em Produto.
+    def _converter_unidade(self, quantidade, unidade_origem, unidade_destino):
+        if unidade_origem == unidade_destino:
+            return quantidade
+
+        # Impedir conversões envolvendo unidades não ponderáveis
+        if unidade_origem == 'un' or unidade_destino == 'un':
+            raise ValueError("Não é possível converter entre unidades de peça e peso.")
+
+        if unidade_origem == 'g' and unidade_destino == 'kg':
+            return quantidade / 1000
+        if unidade_origem == 'kg' and unidade_destino == 'g':
+            return quantidade * 1000
+
+        # Se chegar aqui, conversão não suportada
+        raise ValueError(f"Conversão não suportada: {unidade_origem} → {unidade_destino}")
