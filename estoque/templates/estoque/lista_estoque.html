@@ -79,11 +79,27 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">
-                                                {{ estoque.quantidade_atual }} {{ estoque.get_unidade_medida_display }}
+                                                {% if estoque.quantidade_em_kg is not None %}
+                                                    {{ estoque.quantidade_em_kg|floatformat:3 }} Kg
+                                                {% else %}
+                                                    {{ estoque.quantidade_atual }} {{ estoque.get_unidade_medida_display }}
+                                                {% endif %}
                                             </span>
                                         </td>
-                                        <td>{{ estoque.estoque_minimo }} {{ estoque.get_unidade_medida_display }}</td>
-                                        <td>R$ {{ estoque.preco_compra_atual|floatformat:2 }}</td>
+                                        <td>
+                                            {% if estoque.quantidade_em_kg is not None %}
+                                                {{ estoque.estoque_minimo|floatformat:3 }} Kg
+                                            {% else %}
+                                                {{ estoque.estoque_minimo }} {{ estoque.get_unidade_medida_display }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if estoque.preco_por_kg is not None %}
+                                                R$ {{ estoque.preco_por_kg|floatformat:2 }} / Kg
+                                            {% else %}
+                                                R$ {{ estoque.preco_compra_atual|floatformat:2 }}
+                                            {% endif %}
+                                        </td>
                                         <td>R$ {{ estoque.valor_total_estoque|floatformat:2 }}</td>
                                         <td>
                                             {% if estoque.quantidade_atual == 0 %}

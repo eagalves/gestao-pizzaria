@@ -104,7 +104,13 @@
                                     <tr>
                                         <td>{{ compra.data_compra|date:"d/m/Y" }}</td>
                                         <td>{{ compra.ingrediente.nome }}</td>
-                                        <td>{{ compra.quantidade }}</td>
+                                        <td>
+                                            {% if compra.quantidade_kg is not None %}
+                                                {{ compra.quantidade_kg|floatformat:3 }} Kg
+                                            {% else %}
+                                                {{ compra.quantidade }} {{ compra.unidade }}
+                                            {% endif %}
+                                        </td>
                                         <td>R$ {{ compra.valor_total|floatformat:2 }}</td>
                                     </tr>
                                     {% endfor %}

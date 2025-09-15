@@ -103,6 +103,39 @@ class EstoqueIngrediente(models.Model):
         """Valor total do estoque atual em reais."""
         return (self.quantidade_atual * self.preco_compra_atual_centavos) / 100
 
+    # -----------------------------
+    # Conversões para Quilograma
+    # -----------------------------
+
+    @property
+    def quantidade_em_kg(self):
+        """Retorna a quantidade atual convertida para quilogramas (kg).
+
+        Se a unidade do estoque já estiver em kg, retorna a própria quantidade.
+        Se estiver em gramas (g), divide por 1000. Caso contrário, retorna None.
+        """
+        if self.unidade_medida == 'kg':
+            return self.quantidade_atual
+        if self.unidade_medida == 'g':
+            return self.quantidade_atual / Decimal('1000')
+        # Não é possível converter unidades como "un" para kg de forma genérica
+        return None
+
+    @property
+    def preco_por_kg_centavos(self):
+        """Preço de compra convertido para centavos por kg."""
+        if self.unidade_medida == 'kg':
+            return self.preco_compra_atual_centavos
+        if self.unidade_medida == 'g':
+            return self.preco_compra_atual_centavos * 1000  # preço/g -> preço/kg
+        return None
+
+    @property
+    def preco_por_kg(self):
+        """Preço de compra convertido para reais por kg."""
+        centavos = self.preco_por_kg_centavos
+        return centavos / 100 if centavos is not None else None
+
     def atualizar_preco(self, novo_preco_centavos):
         """Atualiza o preço atual e recalcula custos dos produtos."""
         self.preco_compra_atual_centavos = novo_preco_centavos
@@ -187,6 +220,34 @@ class CompraIngrediente(models.Model):
     def valor_total(self):
         """Retorna valor total em reais."""
         return self.valor_total_centavos / 100
+
+    # -----------------------------
+    # Conversões para Quilograma
+    # -----------------------------
+
+    @property
+    def quantidade_kg(self):
+        """Retorna a quantidade da compra convertida para quilogramas (kg)."""
+        if self.unidade == 'kg':
+            return self.quantidade
+        if self.unidade == 'g':
+            return self.quantidade / Decimal('1000')
+        return None
+
+    @property
+    def preco_unitario_kg_centavos(self):
+        """Preço unitário convertido para centavos por kg."""
+        if self.unidade == 'kg':
+            return self.preco_unitario_centavos
+        if self.unidade == 'g':
+            return self.preco_unitario_centavos * 1000  # preço/g -> preço/kg
+        return None
+
+    @property
+    def preco_unitario_kg(self):
+        """Preço unitário convertido para reais por kg."""
+        centavos = self.preco_unitario_kg_centavos
+        return centavos / 100 if centavos is not None else None
 
     def save(self, *args, **kwargs):
         """Calcula valor total e atualiza estoque automaticamente."""
